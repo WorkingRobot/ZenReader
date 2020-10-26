@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Properties.h"
+
+#include <codecvt>
 #include <unordered_map>
 
 namespace Zen::Streams {
@@ -19,6 +22,7 @@ namespace Zen::Streams {
 
         // Write ops
 
+        /*
         BaseStream& operator<<(bool Val) {
             write((char*)&Val, sizeof(Val));
             return *this;
@@ -102,6 +106,7 @@ namespace Zen::Streams {
             }
             return *this;
         }
+        */
 
         // Read ops
 
@@ -180,6 +185,18 @@ namespace Zen::Streams {
             return *this;
         }
 
+        template<class T>
+        BaseStream& operator>>(std::vector<T>& Val) {
+            int SerializeNum;
+            *this >> SerializeNum;
+            Val.reserve(SerializeNum);
+            for (int i = 0; i < SerializeNum; ++i) {
+                auto& Item = Val.emplace_back();
+                *this >> Item;
+            }
+            return *this;
+        }
+
         template<class K, class V>
         BaseStream& operator>>(std::unordered_map<K, V>& Val) {
             size_t Size;
@@ -194,5 +211,73 @@ namespace Zen::Streams {
             }
             return *this;
         }
+
+        // Only reading FStrings is supported, I don't have reason to write these yet
+        BaseStream& operator>>(std::string& Val) {
+            // > 0 for ANSICHAR, < 0 for UCS2CHAR serialization
+            int SaveNum;
+            *this >> SaveNum;
+
+            bool LoadUCS2Char = SaveNum < 0;
+
+            if (LoadUCS2Char)
+            {
+                // If SaveNum cannot be negated due to integer overflow, Ar is corrupted.
+                if (SaveNum == INT_MIN)
+                {
+                    // TODO: THROW HERE
+                    return *this; // archive corrupted
+                }
+
+                SaveNum = -SaveNum;
+            }
+
+            if (SaveNum == 0)
+            {
+                Val.clear();
+                return *this; // blank
+            }
+
+            if (LoadUCS2Char)
+            {
+                static std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> ucs2conv;
+
+                std::unique_ptr<char16_t[]> StringData = std::make_unique<char16_t[]>(SaveNum);
+                read((char*)StringData.get(), SaveNum * sizeof(char16_t));
+                Val = ucs2conv.to_bytes(StringData.get());
+            }
+            else {
+                std::unique_ptr<char[]> StringData = std::make_unique<char[]>(SaveNum);
+                read(StringData.get(), SaveNum);
+                Val = StringData.get();
+            }
+
+            return *this;
+        }
+
+        // Properties
+
+        template<PropId Id>
+        void* GetProperty() {
+            auto& Stack = Props[(uint8_t)Id];
+            return Stack.empty() ? nullptr : Stack.top();
+        }
+
+        std::stack<void*> Props[(uint8_t)PropId::Count];
+    };
+
+    template<PropId Id>
+    struct PropertyHolder {
+        PropertyHolder(BaseStream& Stream, void* Data) : Stack(Stream.Props[(uint8_t)Id])
+        {
+            Stack.push(Data);
+        }
+
+        ~PropertyHolder() {
+            Stack.pop();
+        }
+
+    private:
+        std::stack<void*>& Stack;
     };
 }

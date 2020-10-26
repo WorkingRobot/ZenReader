@@ -7,7 +7,7 @@ namespace Zen {
 	public:
 		ZGame(const std::filesystem::path& DataFolder)
 		{
-			Readers::UTocFile(DataFolder / "global.utoc");
+			Readers::UTocFile(DataFolder / "pakchunk0-WindowsClient.utoc");
 		}
 
 		~ZGame()

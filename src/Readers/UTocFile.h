@@ -1,12 +1,14 @@
 #pragma once
 
 #include "../Streams/FileStream.h"
+#include "../Streams/BufferStream.h"
 #include "../Structs/FIoStoreTocHeader.h"
 #include "../Structs/FIoChunkId.h"
 #include "../Structs/FIoChunkOffsetAndLength.h"
 #include "../Structs/FIoStoreTocCompressedBlockEntry.h"
 #include "../Structs/FSHAHash.h"
 #include "../Structs/FIoStoreTocEntryMeta.h"
+#include "../Structs/FIoDirectoryIndexResource.h"
 
 #include <filesystem>
 
@@ -56,6 +58,7 @@ namespace Zen::Readers {
 			Value.CompressionMethodNames.reserve(Value.Header.CompressionMethodNameCount);
 			{
 				auto Methods = std::make_unique<char[]>(Value.Header.CompressionMethodNameCount * Value.Header.CompressionMethodNameLength);
+				Stream.read(Methods.get(), Value.Header.CompressionMethodNameCount * Value.Header.CompressionMethodNameLength);
 				for (int i = 0; i < Value.Header.CompressionMethodNameCount; ++i) {
 					Value.CompressionMethodNames.emplace_back(Methods.get() + Value.Header.CompressionMethodNameLength * i);
 				}
@@ -78,6 +81,10 @@ namespace Zen::Readers {
 			if (Value.Header.Version >= EIoStoreTocVersion::DirectoryIndex && Value.Header.ContainerFlags & EIoContainerFlags::Indexed && Value.Header.DirectoryIndexSize > 0) {
 				Value.DirectoryIndexBuffer = std::make_unique<char[]>(Value.Header.DirectoryIndexSize);
 				Stream.read(Value.DirectoryIndexBuffer.get(), Value.Header.DirectoryIndexSize);
+
+				BufferStream DirectoryStream(Value.DirectoryIndexBuffer.get(), Value.Header.DirectoryIndexSize);
+				FIoDirectoryIndexResource DirIdx;
+				DirectoryStream >> DirIdx;
 			}
 
 			Value.ChunkMetas.reserve(Value.Header.TocEntryCount);
