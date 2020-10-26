@@ -5,20 +5,15 @@
 namespace Zen::Structs {
 	class FIoFileIndexEntry {
 	public:
-		std::string* Name;
-		std::string* NextFileEntry;
-		std::string* UserData;
+		uint32_t Name;
+		uint32_t NextFileEntry;
+		uint32_t UserData;
 
 		friend Streams::BaseStream& operator>>(Streams::BaseStream& InputStream, FIoFileIndexEntry& Value) {
-			auto Table = (std::vector<std::string>*)InputStream.GetProperty<PropId::DirIndexStringTable>();
-			uint32_t Name, NextFileEntry, UserData;
-			InputStream >> Name;
-			InputStream >> NextFileEntry;
-			InputStream >> UserData;
+			InputStream >> Value.Name;
+			InputStream >> Value.NextFileEntry;
+			InputStream >> Value.UserData;
 
-			Value.Name = Name == -1 ? nullptr : &Table->at(Name);
-			Value.NextFileEntry = NextFileEntry == -1 ? nullptr : &Table->at(NextFileEntry);
-			Value.UserData = UserData == -1 ? nullptr : &Table->at(UserData);
 			return InputStream;
 		}
 	};

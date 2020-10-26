@@ -4,6 +4,8 @@
 #include "../Structs/FIoDirectoryIndexEntry.h"
 #include "../Structs/FIoFileIndexEntry.h"
 
+#include <filesystem>
+
 namespace Zen::Structs {
 	class FIoDirectoryIndexResource {
 	public:
@@ -17,24 +19,37 @@ namespace Zen::Structs {
 			if (Value.MountPoint.starts_with("../../..")) {
 				Value.MountPoint = Value.MountPoint.substr(9);
 			}
-
-			auto DirEntryOffset = InputStream.tell();
-			int DirEntryCount;
-			InputStream >> DirEntryCount;
-			InputStream.seek(DirEntryCount * 16, BaseStream::Cur);
-			int FileEntryCount;
-			InputStream >> FileEntryCount;
-			InputStream.seek(FileEntryCount * 12, BaseStream::Cur);
-
-			InputStream >> Value.StringTable;
-			auto EndingOffset = InputStream.tell();
-
-			PropertyHolder<PropId::DirIndexStringTable> Holder(InputStream, &Value.StringTable);
-			InputStream.seek(DirEntryOffset, BaseStream::Beg);
 			InputStream >> Value.DirectoryEntries;
 			InputStream >> Value.FileEntries;
-			InputStream.seek(EndingOffset, BaseStream::Beg);
+			InputStream >> Value.StringTable;
+
 			return InputStream;
+		}
+
+		void ReadIndex(const std::filesystem::path& BasePath = "", uint32_t DirIdx = 0) {
+			while (DirIdx != UINT32_MAX) {
+				auto& Dir = DirectoryEntries[DirIdx];
+				auto DirectoryPath = BasePath / GetString(Dir.Name);
+
+				uint32_t FileIdx = Dir.FirstFileEntry;
+				while (FileIdx != UINT32_MAX) {
+					auto& File = FileEntries[FileIdx];
+					auto FilePath = DirectoryPath / GetString(File.Name);
+
+					printf("%s: %zu\n", FilePath.string().c_str(), File.UserData);
+
+					FileIdx = File.NextFileEntry;
+				}
+
+				ReadIndex(DirectoryPath, Dir.FirstChildEntry);
+
+				DirIdx = Dir.NextSiblingEntry;
+			}
+		}
+
+	private:
+		const std::string& GetString(uint32_t StringIdx, const std::string& Default = "") {
+			return StringIdx >= StringTable.size() ? Default : StringTable[StringIdx];
 		}
 	};
 }

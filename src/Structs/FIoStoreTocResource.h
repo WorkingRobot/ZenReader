@@ -1,24 +1,20 @@
 #pragma once
 
-#include "../Streams/FileStream.h"
+#include "../Helpers/AES.h"
 #include "../Streams/BufferStream.h"
-#include "../Structs/FIoStoreTocHeader.h"
-#include "../Structs/FIoChunkId.h"
-#include "../Structs/FIoChunkOffsetAndLength.h"
-#include "../Structs/FIoStoreTocCompressedBlockEntry.h"
-#include "../Structs/FSHAHash.h"
-#include "../Structs/FIoStoreTocEntryMeta.h"
-#include "../Structs/FIoDirectoryIndexResource.h"
+#include "FIoStoreTocHeader.h"
+#include "FIoChunkId.h"
+#include "FIoChunkOffsetAndLength.h"
+#include "FIoStoreTocCompressedBlockEntry.h"
+#include "FSHAHash.h"
+#include "FIoStoreTocEntryMeta.h"
+#include "FIoDirectoryIndexResource.h"
 
 #include <filesystem>
 
-namespace Zen::Readers {
-	using namespace Enums;
-	using namespace Exceptions;
-	using namespace Streams;
-	using namespace Structs;
+namespace Zen::Structs {
 
-	class UTocFile {
+	class FIoStoreTocResource {
 	public:
 		FIoStoreTocHeader Header;
 		std::vector<FIoChunkId> ChunkIds;
@@ -28,15 +24,10 @@ namespace Zen::Readers {
 		std::unique_ptr<char[]> TocSignature;
 		std::unique_ptr<char[]> BlockSignature;
 		std::vector<FSHAHash> ChunkBlockSignatures;
-		std::unique_ptr<char[]> DirectoryIndexBuffer;
+		std::unique_ptr<char[]> DirectoryBuffer;
 		std::vector<FIoStoreTocEntryMeta> ChunkMetas;
 
-		UTocFile(const std::filesystem::path& Path)
-		{
-			FileStream(Path, "rb") >> *this;
-		}
-
-		friend Streams::BaseStream& operator>>(Streams::BaseStream& Stream, UTocFile& Value)
+		friend Streams::BaseStream& operator>>(Streams::BaseStream& Stream, FIoStoreTocResource& Value)
 		{
 			Stream >> Value.Header;
 
@@ -79,12 +70,8 @@ namespace Zen::Readers {
 			}
 
 			if (Value.Header.Version >= EIoStoreTocVersion::DirectoryIndex && Value.Header.ContainerFlags & EIoContainerFlags::Indexed && Value.Header.DirectoryIndexSize > 0) {
-				Value.DirectoryIndexBuffer = std::make_unique<char[]>(Value.Header.DirectoryIndexSize);
-				Stream.read(Value.DirectoryIndexBuffer.get(), Value.Header.DirectoryIndexSize);
-
-				BufferStream DirectoryStream(Value.DirectoryIndexBuffer.get(), Value.Header.DirectoryIndexSize);
-				FIoDirectoryIndexResource DirIdx;
-				DirectoryStream >> DirIdx;
+				Value.DirectoryBuffer = std::make_unique<char[]>(Value.Header.DirectoryIndexSize);
+				Stream.read(Value.DirectoryBuffer.get(), Value.Header.DirectoryIndexSize);
 			}
 
 			Value.ChunkMetas.reserve(Value.Header.TocEntryCount);
