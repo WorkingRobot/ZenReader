@@ -19,9 +19,12 @@ foreach(CompilerFlag ${CompilerFlags})
   string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
 endforeach()
 
+
 ## Dependencies ##
 
-# None :)
+link_libraries(
+    "${CMAKE_CURRENT_SOURCE_DIR}\\src\\Helpers\\oo2core_8_win64.lib"
+)
 
 
 ## Source Files ##

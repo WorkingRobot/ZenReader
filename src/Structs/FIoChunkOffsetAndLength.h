@@ -12,7 +12,7 @@ namespace Zen::Structs {
 			return InputStream;
 		}
 
-		uint64_t GetOffset() {
+		uint64_t GetOffset() const {
 			return Data[4]
 				| (uint64_t(Data[3]) << 8)
 				| (uint64_t(Data[2]) << 16)
@@ -20,7 +20,7 @@ namespace Zen::Structs {
 				| (uint64_t(Data[0]) << 32);
 		}
 
-		uint64_t GetLength() {
+		uint64_t GetLength() const {
 			return Data[9]
 				| (uint64_t(Data[8]) << 8)
 				| (uint64_t(Data[7]) << 16)

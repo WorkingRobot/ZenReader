@@ -6,27 +6,45 @@
 #include "Streams/BufferStream.h"
 
 #include <functional>
+#include <optional>
 
 namespace Zen {
 	using namespace Exceptions;
 	using namespace Streams;
 	using namespace Structs;
 
-	class ZContainer {
+	class BaseContainer {
+	public:
+		BaseContainer(BaseStream& Toc, BaseStream& Cas) :
+			TocStream(Toc),
+			CasStream(Cas)
+		{
+
+		}
+
+		BaseStream& TocStream;
+		BaseStream& CasStream;
+		FIoStoreTocResource Toc;
+		std::optional<FAESKey> Key; // TODO: Check if this is necessary for saving significant memory, it might just be a big slowdown
+	};
+
+	template<class TocStreamType, class CasStreamType>
+	class ZContainer : public BaseContainer {
 	public:
 		template<class FileTree, class File = ZFile>
-		ZContainer(BaseStream& TocStream, BaseStream& CasStream, std::function<bool(const FGuid&, FAESKey&)> KeyDelegate, FileTree& Tree)
+		ZContainer(TocStreamType&& _TocStream, CasStreamType&& _CasStream, std::function<bool(const FGuid&, FAESKey&)> KeyDelegate, FileTree& Tree) :
+			TocStreamHolder(std::move(_TocStream)),
+			CasStreamHolder(std::move(_CasStream)),
+			BaseContainer(TocStreamHolder, CasStreamHolder)
 		{
-			FIoStoreTocResource Toc;
 			TocStream >> Toc;
 
 			if (Toc.DirectoryBuffer) {
 				if (Toc.Header.ContainerFlags & Enums::EIoContainerFlags::Encrypted) {
-					FAESKey Key;
-					if (!KeyDelegate(Toc.Header.EncryptionKeyGuid, Key)) {
+					if (!KeyDelegate(Toc.Header.EncryptionKeyGuid, Key.emplace())) {
 						return;
 					}
-					Helpers::AES::DecodeInPlace(Key, Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
+					Helpers::AES::DecodeInPlace(*Key, Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
 				}
 				BufferStream DirectoryStream(Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
 
@@ -43,7 +61,12 @@ namespace Zen {
 
 		}
 
-	private:
+		ZContainer(ZContainer&&) = default;
 
+	private:
+		TocStreamType TocStreamHolder;
+		CasStreamType CasStreamHolder;
+
+		friend class ZFile;
 	};
 }

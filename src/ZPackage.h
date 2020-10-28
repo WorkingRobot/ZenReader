@@ -19,6 +19,14 @@ namespace Zen {
 			return Exts.emplace_back(std::make_pair(Key(Extension, ExtensionSize), ZFile(std::forward<Args>(FileArgs)...))).second;
 		}
 
+		ZFile* GetFile(const char* Extension) {
+			auto ChildIter = SearchValues(ExtHashes, Exts, Extension, strlen(Extension));
+			if (ChildIter != Exts.end()) {
+				return &ChildIter->second;
+			}
+			return nullptr;
+		}
+
 	private:
 		std::vector<uint32_t> ExtHashes;
 		std::vector<std::pair<Key, ZFile>> Exts;
