@@ -14,21 +14,27 @@ namespace Zen {
 
 	class ZContainer {
 	public:
-		ZContainer(BaseStream& TocStream, BaseStream& CasStream, std::function<const FAESKey&(const FGuid&)> KeyDelegate)
+		template<class FileTree, class File = ZFile>
+		ZContainer(BaseStream& TocStream, BaseStream& CasStream, std::function<bool(const FGuid&, FAESKey&)> KeyDelegate, FileTree& Tree)
 		{
 			FIoStoreTocResource Toc;
 			TocStream >> Toc;
 
 			if (Toc.DirectoryBuffer) {
 				if (Toc.Header.ContainerFlags & Enums::EIoContainerFlags::Encrypted) {
-					Helpers::AES::DecodeInPlace(KeyDelegate(Toc.Header.EncryptionKeyGuid), Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
+					FAESKey Key;
+					if (!KeyDelegate(Toc.Header.EncryptionKeyGuid, Key)) {
+						return;
+					}
+					Helpers::AES::DecodeInPlace(Key, Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
 				}
 				BufferStream DirectoryStream(Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
 
 				FIoDirectoryIndexResource DirectoryIndex;
 				DirectoryStream >> DirectoryIndex;
 
-				DirectoryIndex.ReadIndex();
+				// The *this gets passed to the ZFile constructor after the UserData field
+				DirectoryIndex.ReadIndex<FileTree>(Tree, *this);
 			}
 		}
 

@@ -3,6 +3,6 @@
 using namespace Zen;
 
 int main() {
-	ZGame("J:/Programs/FN/cache/fn/FortniteGame/Content/Paks");
+	ZGame Game("J:/Programs/FN/cache/fn/FortniteGame/Content/Paks");
 	return 0;
 }

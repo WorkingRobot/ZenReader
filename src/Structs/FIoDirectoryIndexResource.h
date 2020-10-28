@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../Streams/BaseStream.h"
-#include "../Structs/FIoDirectoryIndexEntry.h"
-#include "../Structs/FIoFileIndexEntry.h"
+#include "FIoDirectoryIndexEntry.h"
+#include "FIoFileIndexEntry.h"
 
 #include <filesystem>
 
@@ -26,22 +26,38 @@ namespace Zen::Structs {
 			return InputStream;
 		}
 
-		void ReadIndex(const std::filesystem::path& BasePath = "", uint32_t DirIdx = 0) {
+		// Sorry in advance for all the std::forward, it's done to ensure rvalue refs stay as rvalue refs
+		// The std::make_unique does that, for example
+		template<class FileTree, class... Args>
+		void ReadIndex(FileTree& Tree, Args&&... args) {
+			ReadIndex<FileTree>(Tree.AddFolders<true>(MountPoint.c_str()), DirectoryEntries[0].FirstChildEntry, std::forward<Args>(args)...);
+		}
+
+		template<class FileTree, class... Args>
+		void ReadIndex(FileTree& Tree, uint32_t DirIdx, Args&&... FileArgs) {
 			while (DirIdx != UINT32_MAX) {
 				auto& Dir = DirectoryEntries[DirIdx];
-				auto DirectoryPath = BasePath / GetString(Dir.Name);
+				auto& DirName = GetString(Dir.Name);
+				auto& DirTree = Tree.AddFolder<true>(DirName.c_str(), DirName.size());
 
 				uint32_t FileIdx = Dir.FirstFileEntry;
 				while (FileIdx != UINT32_MAX) {
 					auto& File = FileEntries[FileIdx];
-					auto FilePath = DirectoryPath / GetString(File.Name);
-
-					printf("%s: %zu\n", FilePath.string().c_str(), File.UserData);
+					auto& FileName = GetString(File.Name);
+					auto Dot = FileName.rfind('.');
+					if (Dot != std::string::npos) {
+						auto& Pkg = DirTree.AddPackage<true>(FileName.c_str(), Dot);
+						Pkg.AddFile<false>(FileName.c_str() + Dot + 1, FileName.size() - Dot - 1, File.UserData, std::forward<Args>(FileArgs)...);
+					}
+					else {
+						auto& Pkg = DirTree.AddPackage<true>(FileName.c_str(), FileName.size());
+						Pkg.AddFile<false>(NULL, 0, File.UserData, std::forward<Args>(FileArgs)...);
+					}
 
 					FileIdx = File.NextFileEntry;
 				}
 
-				ReadIndex(DirectoryPath, Dir.FirstChildEntry);
+				ReadIndex<FileTree>(DirTree, Dir.FirstChildEntry, std::forward<Args>(FileArgs)...);
 
 				DirIdx = Dir.NextSiblingEntry;
 			}
@@ -51,5 +67,7 @@ namespace Zen::Structs {
 		const std::string& GetString(uint32_t StringIdx, const std::string& Default = "") {
 			return StringIdx >= StringTable.size() ? Default : StringTable[StringIdx];
 		}
+
+		//std::filesystem::path BasePath;
 	};
 }

@@ -14,6 +14,8 @@ namespace Zen::Streams {
             open(FilePath, Mode);
         }
 
+        FileStream(FileStream&&) = default;
+        FileStream& operator=(FileStream&&) = default;
         FileStream(const FileStream&) = delete;
         FileStream& operator=(const FileStream&) = delete;
 
