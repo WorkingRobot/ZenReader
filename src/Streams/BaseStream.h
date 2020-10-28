@@ -247,9 +247,8 @@ namespace Zen::Streams {
                 Val = ucs2conv.to_bytes(StringData.get());
             }
             else {
-                std::unique_ptr<char[]> StringData = std::make_unique<char[]>(SaveNum);
-                read(StringData.get(), SaveNum);
-                Val = StringData.get();
+                Val.resize(SaveNum - 1);
+                read(Val.data(), SaveNum);
             }
 
             return *this;

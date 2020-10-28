@@ -31,27 +31,21 @@ namespace Zen::Structs {
 		{
 			Stream >> Value.Header;
 
-			Value.ChunkIds.reserve(Value.Header.TocEntryCount);
-			for (int i = 0; i < Value.Header.TocEntryCount; ++i) {
-				Stream >> Value.ChunkIds.emplace_back();
-			}
+			Value.ChunkIds.resize(Value.Header.TocEntryCount);
+			Stream.read((char*)Value.ChunkIds.data(), sizeof(FIoChunkId) * Value.Header.TocEntryCount);
 
-			Value.ChunkOffsetLengths.reserve(Value.Header.TocEntryCount);
-			for (int i = 0; i < Value.Header.TocEntryCount; ++i) {
-				Stream >> Value.ChunkOffsetLengths.emplace_back();
-			}
+			Value.ChunkOffsetLengths.resize(Value.Header.TocEntryCount);
+			Stream.read((char*)Value.ChunkOffsetLengths.data(), sizeof(FIoChunkOffsetAndLength) * Value.Header.TocEntryCount);
 
-			Value.CompressionBlocks.reserve(Value.Header.TocCompressedBlockEntryCount);
-			for (int i = 0; i < Value.Header.TocCompressedBlockEntryCount; ++i) {
-				Stream >> Value.CompressionBlocks.emplace_back();
-			}
+			Value.CompressionBlocks.resize(Value.Header.TocCompressedBlockEntryCount);
+			Stream.read((char*)Value.CompressionBlocks.data(), sizeof(FIoStoreTocCompressedBlockEntry) * Value.Header.TocCompressedBlockEntryCount);
 
-			Value.CompressionMethodNames.reserve(Value.Header.CompressionMethodNameCount);
+			Value.CompressionMethodNames.resize(Value.Header.CompressionMethodNameCount);
 			{
 				auto Methods = std::make_unique<char[]>(Value.Header.CompressionMethodNameCount * Value.Header.CompressionMethodNameLength);
 				Stream.read(Methods.get(), Value.Header.CompressionMethodNameCount * Value.Header.CompressionMethodNameLength);
 				for (int i = 0; i < Value.Header.CompressionMethodNameCount; ++i) {
-					Value.CompressionMethodNames.emplace_back(Methods.get() + Value.Header.CompressionMethodNameLength * i);
+					Value.CompressionMethodNames[i] = Methods.get() + Value.Header.CompressionMethodNameLength * i;
 				}
 			}
 
@@ -63,10 +57,8 @@ namespace Zen::Structs {
 				Stream.read(Value.TocSignature.get(), HashSize);
 				Stream.read(Value.BlockSignature.get(), HashSize);
 
-				Value.ChunkBlockSignatures.reserve(Value.Header.TocCompressedBlockEntryCount);
-				for (int i = 0; i < Value.Header.TocCompressedBlockEntryCount; ++i) {
-					Stream >> Value.ChunkBlockSignatures.emplace_back();
-				}
+				Value.ChunkBlockSignatures.resize(Value.Header.TocCompressedBlockEntryCount);
+				Stream.read((char*)Value.ChunkBlockSignatures.data(), sizeof(FSHAHash) * Value.Header.TocCompressedBlockEntryCount);
 			}
 
 			if (Value.Header.Version >= EIoStoreTocVersion::DirectoryIndex && Value.Header.ContainerFlags & EIoContainerFlags::Indexed && Value.Header.DirectoryIndexSize > 0) {
@@ -74,10 +66,8 @@ namespace Zen::Structs {
 				Stream.read(Value.DirectoryBuffer.get(), Value.Header.DirectoryIndexSize);
 			}
 
-			Value.ChunkMetas.reserve(Value.Header.TocEntryCount);
-			for (int i = 0; i < Value.Header.TocEntryCount; ++i) {
-				Stream >> Value.ChunkMetas.emplace_back();
-			}
+			Value.ChunkMetas.resize(Value.Header.TocEntryCount);
+			Stream.read((char*)Value.ChunkMetas.data(), sizeof(FIoStoreTocEntryMeta) * Value.Header.TocEntryCount);
 
 			return Stream;
 		}
