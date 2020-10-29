@@ -34,10 +34,17 @@ namespace Zen {
 			//ZContainer Container(Toc, Cas, [](const Structs::FGuid& guid) { return Structs::FAESKey(); }, Tree);
 			auto Package = Tree.TryGetPackage("FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap");
 			auto File = Package->GetFile("uasset");
-			uint64_t DataSize;
-			auto Data = File->ReadFile(DataSize);
-			auto outFile = fopen("map.uasset", "wb");
-			fwrite(Data.get(), 1, DataSize, outFile);
+			auto FileStream = File->GetStream();
+
+			auto Data = std::make_unique<char[]>(FileStream.size());
+
+			StartTime = std::chrono::steady_clock::now();
+			FileStream.read(Data.get(), FileStream.size());
+			ms = (std::chrono::steady_clock::now() - StartTime).count() / 1000000.f;
+			printf("%.2f ms\n", ms);
+
+			auto outFile = fopen("map2.uasset", "wb");
+			fwrite(Data.get(), 1, FileStream.size(), outFile);
 			fclose(outFile);
 		}
 

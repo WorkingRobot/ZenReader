@@ -17,7 +17,7 @@ namespace Zen::Helpers {
 		{
 			// Good suggestion if necessary:
 			// https://github.com/WorkingRobot/EGL2/blob/6f750679da8b71a82f5d271ca1d98f8957488668/storage/compression.cpp#L229
-			auto n = OodleLZ_Decompress(Src, SrcSize, Dst, DstSize, OodleLZ_FuzzSafe_No, OodleLZ_CheckCRC_No, OodleLZ_Verbosity_Max, NULL, 0, NULL, NULL, NULL, 0, OodleLZ_Decode_Unthreaded);
+			auto n = OodleLZ_Decompress(Src, SrcSize, Dst, DstSize, OodleLZ_FuzzSafe_No, OodleLZ_CheckCRC_No, OodleLZ_Verbosity_None, NULL, 0, NULL, NULL, NULL, 0, OodleLZ_Decode_Unthreaded);
 			break;
 		}
 		default:
