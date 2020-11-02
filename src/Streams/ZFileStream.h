@@ -13,9 +13,9 @@ namespace Zen::Streams {
         ZFileStream(uint32_t ChunkIdIdx, const BaseContainer& Container) :
             ChunkIdIdx(ChunkIdIdx),
             Container(Container),
+            Buffer(std::make_unique<char[]>(Container.Toc.Header.CompressionBlockSize)),
             BufferBlockIdx(-1),
-            Position(0),
-            Buffer(std::make_unique<char[]>(Container.Toc.Header.CompressionBlockSize))
+            Position(0)
         {
 
         }
@@ -102,7 +102,6 @@ namespace Zen::Streams {
             auto BlockOffset = LengthData.GetOffset() % Container.Toc.Header.CompressionBlockSize;
             auto EndBlockIdx = (Helpers::Align<size_t>(LengthData.GetOffset() + LengthData.GetLength(), Container.Toc.Header.CompressionBlockSize) - 1) / Container.Toc.Header.CompressionBlockSize;
             for (auto BlockIdx = LengthData.GetOffset() / Container.Toc.Header.CompressionBlockSize; BlockIdx <= EndBlockIdx; ++BlockIdx) {
-                auto& Entry = Container.Toc.CompressionBlocks[BlockIdx];
                 if (Position < Container.Toc.Header.CompressionBlockSize - BlockOffset) {
                     OutBlockOffset = BlockOffset + Position;
                     return BlockIdx;

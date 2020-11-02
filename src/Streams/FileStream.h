@@ -10,8 +10,8 @@ namespace Zen::Streams {
     public:
         FileStream(const std::filesystem::path& FilePath) :
             BaseStream(FilePath, std::ios::in | std::ios::binary),
-            FileSize(std::filesystem::file_size(FilePath)),
-            Filename(FilePath.string())
+            Filename(FilePath.string()),
+            FileSize(std::filesystem::file_size(FilePath))
         {
             
         }
@@ -57,8 +57,8 @@ namespace Zen::Streams {
         }
 
     private:
-        std::string Filename;
         std::ifstream BaseStream;
+        std::string Filename;
         size_t FileSize;
     };
 }

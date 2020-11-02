@@ -7,7 +7,7 @@
 namespace Zen {
 	// This is a super memory-optimized tree to help lower RAM usage while still keeping some level of speed
 	// uint8_t is best, but might be unsafe (if your game's developer is really bad at naming things). StrlenKey is faster for some reason though?
-	template<class Key = StrlenKey<uint8_t>>
+	template<typename Key = StrlenKey<uint8_t>>
 	class ZFileTree {
 	public:
 		ZFileTree()
@@ -22,17 +22,17 @@ namespace Zen {
 
 		ZFileTree(ZFileTree&&) = default;
 
-		template<bool CheckIfAlreadyExists, class KeySize = Key::KeySize>
+		template<bool CheckIfAlreadyExists>
 		ZFileTree& AddFolders(const char* MountPoint) {
 			if (!*MountPoint) {
 				return *this;
 			}
 			auto NextSeparator = strchr(MountPoint, '/');
-			return AddFolder<CheckIfAlreadyExists>(MountPoint, NextSeparator - MountPoint).AddFolders<CheckIfAlreadyExists>(NextSeparator + 1);
+			return AddFolder<CheckIfAlreadyExists>(MountPoint, NextSeparator - MountPoint).template AddFolders<CheckIfAlreadyExists>(NextSeparator + 1);
 		}
 
-		template<bool CheckIfAlreadyExists, class KeySize = Key::KeySize>
-		ZFileTree& AddFolder(const char* FolderName, KeySize NameSize) {
+		template<bool CheckIfAlreadyExists>
+		ZFileTree& AddFolder(const char* FolderName, typename Key::KeySize NameSize) {
 			if constexpr (CheckIfAlreadyExists) {
 				auto ChildIter = SearchValues(FolderHashes, Folders, FolderName, NameSize);
 				if (ChildIter != Folders.end()) {
@@ -43,8 +43,8 @@ namespace Zen {
 			return Folders.emplace_back(Key(FolderName, NameSize), ZFileTree()).second;
 		}
 
-		template<bool CheckIfAlreadyExists, class KeySize = Key::KeySize>
-		ZPackage<Key>& AddPackage(const char* PackageName, KeySize NameSize) {
+		template<bool CheckIfAlreadyExists>
+		ZPackage<Key>& AddPackage(const char* PackageName, typename Key::KeySize NameSize) {
 			if constexpr (CheckIfAlreadyExists) {
 				auto ChildIter = SearchValues(FileHashes, Files, PackageName, NameSize);
 				if (ChildIter != Files.end()) {

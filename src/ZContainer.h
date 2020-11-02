@@ -31,11 +31,11 @@ namespace Zen {
 	template<class TocStreamType, class CasStreamType>
 	class ZContainer : public BaseContainer {
 	public:
-		template<class FileTree, class File = ZFile>
+		template<typename FileTree>
 		ZContainer(TocStreamType&& _TocStream, CasStreamType&& _CasStream, std::function<bool(const FGuid&, FAESKey&)> KeyDelegate, FileTree& Tree) :
+			BaseContainer(TocStreamHolder, CasStreamHolder),
 			TocStreamHolder(std::move(_TocStream)),
-			CasStreamHolder(std::move(_CasStream)),
-			BaseContainer(TocStreamHolder, CasStreamHolder)
+			CasStreamHolder(std::move(_CasStream))
 		{
 			TocStream >> Toc;
 

@@ -35,7 +35,7 @@ namespace Zen::Helpers {
 #define H(x) I(x) I(x +   1)
 #define I(x) f<x>::value,
 
-        static constexpr int crc_table[] = { A(0) };
+        static constexpr uint32_t crc_table[] = { A(0) };
 
 #undef A
 #undef B

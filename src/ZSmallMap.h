@@ -4,12 +4,13 @@
 
 #include <memory>
 #include <vector>
+#include <string.h>
 
 namespace Zen {
 	// Adds a null terminator to compute the size
-	template<class Size>
+	template<typename SizeType>
 	struct StrlenKey {
-		typedef Size KeySize;
+		typedef SizeType KeySize;
 
 		// Using initializers here forces the optimization to not create an empty unique ptr first
 		StrlenKey(const char* String, KeySize Size) : Data(new char[Size + 1])
@@ -32,9 +33,9 @@ namespace Zen {
 	};
 
 	// Simply places the length behind the name
-	template<class Size>
+	template<typename SizeType>
 	struct PrefixedKey {
-		typedef Size KeySize;
+		typedef SizeType KeySize;
 
 		PrefixedKey(const char* String, KeySize Size) : Data(new char[sizeof(KeySize) + Size])
 		{
@@ -56,8 +57,8 @@ namespace Zen {
 	};
 
 	namespace {
-		template<class ValueType, class Key, class KeySize = Key::KeySize>
-		decltype(auto) SearchValues(const std::vector<uint32_t>& Hashes, std::vector<std::pair<Key, ValueType>>& Names, const char* KeyString, KeySize KeyStringSize) {
+		template<typename ValueType, typename KeyType>
+		decltype(auto) SearchValues(const std::vector<uint32_t>& Hashes, std::vector<std::pair<KeyType, ValueType>>& Names, const char* KeyString, typename KeyType::KeySize KeyStringSize) {
 			if (Hashes.size() != 0) {
 				uint32_t TargetHash = Helpers::Hash::Crc32(KeyString, KeyStringSize);
 				for (int i = 0; i < Hashes.size(); ++i) {

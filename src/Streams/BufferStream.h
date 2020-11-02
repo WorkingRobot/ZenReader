@@ -48,7 +48,7 @@ namespace Zen::Streams {
             return Position;
         }
 
-        size_t size() {
+        size_t size() override {
             return Size;
         }
 

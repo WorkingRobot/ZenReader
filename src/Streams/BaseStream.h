@@ -2,7 +2,6 @@
 
 #include "Properties.h"
 
-#include <codecvt>
 #include <unordered_map>
 
 namespace Zen::Streams {
@@ -240,11 +239,9 @@ namespace Zen::Streams {
 
             if (LoadUCS2Char)
             {
-                static std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> ucs2conv;
-
                 std::unique_ptr<char16_t[]> StringData = std::make_unique<char16_t[]>(SaveNum);
                 read((char*)StringData.get(), SaveNum * sizeof(char16_t));
-                Val = ucs2conv.to_bytes(StringData.get());
+                Val = { StringData.get(), StringData.get() + SaveNum };
             }
             else {
                 Val.resize(SaveNum - 1);

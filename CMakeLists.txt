@@ -16,8 +16,18 @@ set(CompilerFlags
         CMAKE_C_FLAGS_RELEASE
         )
 foreach(CompilerFlag ${CompilerFlags})
-  string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+    string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
 endforeach()
+
+
+## Force MSVC to have conformance with other compilers ##
+
+add_compile_options("/permissive-")
+
+
+## Give non MSVC compilers some intrinsics (AES is required) ##
+
+add_compile_options("-march=native")
 
 
 ## Dependencies ##
@@ -66,7 +76,7 @@ add_executable(ZenReader ${ZenReader_SOURCES})
 
 ## Properties ##
 
-# C++20 #
+# C++20
 set_property(TARGET ZenReader PROPERTY CXX_STANDARD 20)
 
 # Add .pdb for release builds

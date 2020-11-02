@@ -4,11 +4,11 @@
 #include "ZFile.h"
 
 namespace Zen {
-	template<class Key = PrefixedKey<uint8_t>>
+	template<typename Key = PrefixedKey<uint8_t>>
 	class ZPackage {
 	public:
-		template<bool CheckIfAlreadyExists, class KeySize = Key::KeySize, class... Args>
-		ZFile& AddFile(const char* Extension, KeySize ExtensionSize, Args&&... FileArgs) {
+		template<bool CheckIfAlreadyExists, typename... Args>
+		ZFile& AddFile(const char* Extension, typename Key::KeySize ExtensionSize, Args&&... FileArgs) {
 			if constexpr (CheckIfAlreadyExists) {
 				auto ChildIter = SearchValues(ExtHashes, Exts, Extension, ExtensionSize);
 				if (ChildIter != Exts.end()) {
