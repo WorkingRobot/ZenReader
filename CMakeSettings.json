@@ -25,9 +25,21 @@
       "variables": []
     },
     {
-      "name": "x64-Release",
+      "name": "x64-Release-MSVC",
       "generator": "Ninja",
       "configurationType": "Release",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": []
+    },
+    {
+      "name": "x64-MinRel",
+      "generator": "Ninja",
+      "configurationType": "MinSizeRel",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
@@ -37,9 +49,9 @@
       "variables": []
     },
     {
-      "name": "x64-MinRel",
+      "name": "x64-Release-Clang",
       "generator": "Ninja",
-      "configurationType": "MinSizeRel",
+      "configurationType": "Release",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",

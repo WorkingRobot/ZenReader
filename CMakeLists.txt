@@ -80,7 +80,7 @@ add_executable(ZenReader ${ZenReader_SOURCES})
 set_property(TARGET ZenReader PROPERTY CXX_STANDARD 20)
 
 # Add .pdb for release builds
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
+if(CMAKE_BUILD_TYPE MATCHES "Release")
    target_compile_options(ZenReader PRIVATE /Zi)
    set_target_properties(ZenReader PROPERTIES
         LINK_FLAGS "/INCREMENTAL:NO /DEBUG /OPT:REF /OPT:ICF"

@@ -23,7 +23,7 @@ namespace Zen::Helpers {
         // https://stackoverflow.com/a/28801005
         template <unsigned c, int k = 8>
         struct f : f<((c & 1) ? 0xedb88320 : 0) ^ (c >> 1), k - 1> {};
-        template <unsigned c> struct f<c, 0> { enum { value = c }; };
+        template <unsigned c> struct f<c, 0> { enum : uint32_t { value = c }; };
 
 #define A(x) B(x) B(x + 128)
 #define B(x) C(x) C(x +  64)
