@@ -20,6 +20,13 @@ namespace Zen::Streams {
 
         }
 
+        ZFileStream(const FIoChunkId& ChunkId, const BaseContainer& Container) : ZFileStream(Container.Toc.GetChunkIdx(ChunkId), Container)
+        {
+            if (ChunkIdIdx == -1) {
+                // TODO: THROW EXCEPTION
+            }
+        }
+
         BaseStream& write(const char* Buf, size_t BufCount) override {
             // unsupported lol
             return *this;

@@ -27,6 +27,7 @@ namespace Zen::Structs {
 			InputStream >> Value.B;
 			InputStream >> Value.C;
 			InputStream >> Value.D;
+
 			return InputStream;
 		}
 

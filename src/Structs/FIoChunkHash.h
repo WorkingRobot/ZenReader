@@ -9,6 +9,7 @@ namespace Zen::Structs {
 
 		friend Streams::BaseStream& operator>>(Streams::BaseStream& InputStream, FIoChunkHash& Value) {
 			InputStream >> Value.Hash;
+
 			return InputStream;
 		}
 	};

@@ -2,6 +2,7 @@
 
 #include "ZSmallMap.h"
 #include "ZFile.h"
+#include "ZExport.h"
 
 namespace Zen {
 	template<typename Key = PrefixedKey<uint8_t>>
@@ -25,6 +26,12 @@ namespace Zen {
 				return &ChildIter->second;
 			}
 			return nullptr;
+		}
+
+		ZExport GetExport(const ZGlobalData& GlobalData) {
+			return ZExport([this](const char* Extension) {
+				return GetFile(Extension);
+			}, GlobalData);
 		}
 
 	private:

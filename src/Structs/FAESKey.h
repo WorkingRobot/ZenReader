@@ -9,6 +9,7 @@ namespace Zen::Structs {
 
 		friend Streams::BaseStream& operator>>(Streams::BaseStream& InputStream, FAESKey& Value) {
 			InputStream >> Value.Key;
+
 			return InputStream;
 		}
 

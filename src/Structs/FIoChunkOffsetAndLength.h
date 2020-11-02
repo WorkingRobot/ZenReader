@@ -9,6 +9,7 @@ namespace Zen::Structs {
 
 		friend Streams::BaseStream& operator>>(Streams::BaseStream& InputStream, FIoChunkOffsetAndLength& Value) {
 			InputStream >> Value.Data;
+
 			return InputStream;
 		}
 

@@ -14,6 +14,7 @@ namespace Zen::Structs {
 
 		friend Streams::BaseStream& operator>>(Streams::BaseStream& InputStream, FIoContainerId& Value) {
 			InputStream >> Value.Id;
+
 			return InputStream;
 		}
 

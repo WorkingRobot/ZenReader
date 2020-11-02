@@ -15,6 +15,7 @@ namespace Zen::Structs {
 			uint8_t Flags;
 			InputStream >> Flags;
 			Value.Flags = (FIoStoreTocEntryMetaFlags)Flags;
+
 			return InputStream;
 		}
 	};

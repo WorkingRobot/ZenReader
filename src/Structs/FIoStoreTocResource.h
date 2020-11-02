@@ -71,5 +71,13 @@ namespace Zen::Structs {
 
 			return Stream;
 		}
+
+		uint32_t GetChunkIdx(const FIoChunkId& ChunkId) const {
+			auto Itr = std::find(ChunkIds.begin(), ChunkIds.end(), ChunkId);
+			if (Itr == ChunkIds.end()) {
+				return -1;
+			}
+			return std::distance(ChunkIds.begin(), Itr);
+		}
 	};
 }
