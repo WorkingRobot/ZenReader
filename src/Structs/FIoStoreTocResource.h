@@ -79,5 +79,17 @@ namespace Zen::Structs {
 			}
 			return std::distance(ChunkIds.begin(), Itr);
 		}
+
+		void InvalidateBuffers() {
+			TocSignature.reset();
+			BlockSignature.reset();
+			DirectoryBuffer.reset();
+
+			ChunkBlockSignatures.clear();
+			ChunkMetas.clear();
+
+			ChunkBlockSignatures.shrink_to_fit();
+			ChunkMetas.shrink_to_fit();
+		}
 	};
 }

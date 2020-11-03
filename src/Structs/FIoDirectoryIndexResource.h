@@ -64,8 +64,8 @@ namespace Zen::Structs {
 		}
 
 	private:
-		const std::string& GetString(uint32_t StringIdx, const std::string& Default = "") {
-			return StringIdx >= StringTable.size() ? Default : StringTable[StringIdx];
+		const std::string& GetString(uint32_t StringIdx) const {
+			return StringTable[StringIdx];
 		}
 	};
 }

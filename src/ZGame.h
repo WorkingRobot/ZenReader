@@ -35,6 +35,7 @@ namespace Zen {
 			}
 			auto ms = (std::chrono::steady_clock::now() - StartTime).count() / 1000000.f;
 			printf("%.2f ms\n", ms);
+			return;
 			//ZContainer Container(Toc, Cas, [](const Structs::FGuid& guid) { return Structs::FAESKey(); }, Tree);
 			auto Package = Tree.TryGetPackage("FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap");
 

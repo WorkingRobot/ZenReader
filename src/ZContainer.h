@@ -31,8 +31,9 @@ namespace Zen {
 	template<class TocStreamType, class CasStreamType>
 	class ZContainer : public BaseContainer {
 	public:
-		template<typename FileTree>
-		ZContainer(TocStreamType&& _TocStream, CasStreamType&& _CasStream, std::function<bool(const FGuid&, FAESKey&)> KeyDelegate, FileTree& Tree) :
+		// KeyDelegate is of type bool(const FGuid&, FAESKey&)
+		template<typename KeyDelegateCall, typename FileTree>
+		ZContainer(TocStreamType&& _TocStream, CasStreamType&& _CasStream, KeyDelegateCall KeyDelegate, FileTree& Tree) :
 			BaseContainer(TocStreamHolder, CasStreamHolder),
 			TocStreamHolder(std::move(_TocStream)),
 			CasStreamHolder(std::move(_CasStream))
@@ -40,20 +41,28 @@ namespace Zen {
 			TocStream >> Toc;
 
 			if (Toc.DirectoryBuffer) {
+				bool BufferValid = true;
 				if (Toc.Header.ContainerFlags & Enums::EIoContainerFlags::Encrypted) {
-					if (!KeyDelegate(Toc.Header.EncryptionKeyGuid, Key.emplace())) {
-						return;
+					if (KeyDelegate(Toc.Header.EncryptionKeyGuid, Key.emplace())) {
+						Helpers::AES::DecodeInPlace(*Key, Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
 					}
-					Helpers::AES::DecodeInPlace(*Key, Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
+					else {
+						BufferValid = false;
+					}
 				}
-				BufferStream DirectoryStream(Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
 
-				FIoDirectoryIndexResource DirectoryIndex;
-				DirectoryStream >> DirectoryIndex;
+				if (BufferValid) {
+					BufferStream DirectoryStream(Toc.DirectoryBuffer.get(), Toc.Header.DirectoryIndexSize);
 
-				// The *this gets passed to the ZFile constructor after the UserData field
-				DirectoryIndex.ReadIndex<FileTree>(Tree, *this);
+					FIoDirectoryIndexResource DirectoryIndex;
+					DirectoryStream >> DirectoryIndex;
+
+					// The *this gets passed to the ZFile constructor after the UserData field
+					DirectoryIndex.ReadIndex<FileTree>(Tree, *this);
+				}
 			}
+
+			Toc.InvalidateBuffers();
 		}
 
 		~ZContainer()
