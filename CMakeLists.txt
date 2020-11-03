@@ -2,7 +2,13 @@
 
 project(ZenReader)
 
+## Options ##
+
+option(ENABLE_TRACY "Adds tracy profiler (MSVC compiler and initialized git submodule is required)" OFF)
+
+
 ## Use /MT instead of /MD ##
+
 set(CompilerFlags
         CMAKE_CXX_FLAGS
         CMAKE_CXX_FLAGS_DEBUG
@@ -22,12 +28,15 @@ endforeach()
 
 ## Force MSVC to have conformance with other compilers ##
 
-add_compile_options("/permissive-")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options("/permissive-")
 
 
 ## Give non MSVC compilers some intrinsics (AES is required) ##
 
-add_compile_options("-march=native")
+else()
+    add_compile_options("-march=native")
+endif()
 
 
 ## Dependencies ##
@@ -67,6 +76,16 @@ function(ADD_DIR_RECURSIVE PROJECT TARGET_DIR)
 endfunction()
 
 add_dir_recursive(ZenReader src)
+
+
+## Tracy option handling ##
+
+if(ENABLE_TRACY AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    message("Tracy profiling is enabled")
+    list(APPEND ZenReader_SOURCES "tracy/TracyClient.cpp")
+    include_directories(tracy)
+    add_definitions(-DTRACY_ENABLE -DTRACY_NO_EXIT)
+endif()
 
 
 ## Define target ##
