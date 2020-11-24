@@ -2,6 +2,7 @@
 
 #include "Properties.h"
 
+#include <memory>
 #include <unordered_map>
 
 namespace Zen::Streams {
@@ -18,6 +19,15 @@ namespace Zen::Streams {
         virtual BaseStream& seek(size_t Position, SeekPosition SeekFrom) = 0;
         virtual size_t tell() = 0;
         virtual size_t size() = 0;
+
+        void Dump(const char* Path) {
+            seek(0, Beg);
+            auto Buf = std::make_unique<char[]>(size());
+            read(Buf.get(), size());
+            auto File = fopen(Path, "wb");
+            fwrite(Buf.get(), 1, size(), File);
+            fclose(File);
+        }
 
         // Write ops
 

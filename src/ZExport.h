@@ -3,9 +3,9 @@
 #include "ZFile.h"
 #include "ZGlobalData.h"
 #include "ZNameMap.h"
+#include "Exports/UObject.h"
+#include "Providers/Base.h"
 #include "Structs/FPackageSummary.h"
-#include "Structs/FSerializedNameHeader.h"
-#include "Structs/FNameEntrySerialized.h"
 #include "Structs/FPackageObjectIndex.h"
 #include "Structs/FExportMapEntry.h"
 #include "Structs/FPackageId.h"
@@ -18,7 +18,7 @@ namespace Zen {
 	class ZExport {
 	public:
 		// https://github.com/EpicGames/UnrealEngine/blob/15690f68b984ec2fb9269dd59ff9c3c42b77bd67/Engine/Source/Developer/IoStoreUtilities/Private/IoStoreUtilities.cpp#L929
-		ZExport(std::function<ZFile*(const char*)> GetExtStream, const ZGlobalData& GlobalData) {
+		ZExport(std::function<ZFile*(const char*)> GetExtStream, const ZGlobalData& GlobalData, const Providers::BaseProvider& SchemaProvider) {
 			auto UAssetFile = GetExtStream("uasset");
 			if (!UAssetFile) {
 				return;
@@ -63,14 +63,22 @@ namespace Zen {
 				UAsset >> ImportedPackageId;
 				std::vector<FArc> Arcs; // unused?
 				UAsset >> Arcs;
-				printf("some arc stuff, breaking here\n");
 			}
 
+			auto ExportOffset = Summary.GraphDataOffset + Summary.GraphDataSize;
+			PropertyHolder<PropId::Provider> UAssetProvider(UAsset, (void*)&SchemaProvider);
 			for (auto& Export : ExportMap) {
-				// GetEntry is always global, it's in the global utoc, anyway, so it's safe to ask the global namemap directly
-				auto& Name = GlobalData.NameMap.GetName(GlobalData.GetEntry(Export.ClassIndex).ObjectName).Name;
+				UAsset.seek(ExportOffset, BaseStream::Beg);
+
+				// GetEntry is always global (in the global utoc) anyway, so it's safe to ask the global namemap directly
+				auto& ExportType = GlobalData.NameMap.GetName(GlobalData.GetEntry(Export.ClassIndex).ObjectName).Name;
 				
-				printf("%s\n", Name.c_str());
+				auto Schema = SchemaProvider.GetSchema(ExportType);
+				if (Schema) {
+					Exports::UObject(UAsset, *Schema);
+				}
+
+				ExportOffset += Export.CookedSerialSize;
 			}
 		}
 

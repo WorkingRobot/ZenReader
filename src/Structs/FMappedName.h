@@ -4,6 +4,8 @@
 #include "../Streams/BaseStream.h"
 
 namespace Zen::Structs {
+	using namespace Enums;
+	// This is based off of FMinimalName which is identical to FName, except it doesn't have the DisplayIndex (therefore only non-case preserving is allowed)
 	class FMappedName {
 	public:
 		uint32_t Index;

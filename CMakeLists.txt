@@ -5,6 +5,7 @@ project(ZenReader)
 ## Options ##
 
 option(ENABLE_TRACY "Adds tracy profiler (MSVC compiler and initialized git submodule is required)" OFF)
+option(USE_JSON "Requires rapidjson, allows the use of FModel's and JohnWickParse's mappings" OFF)
 
 
 ## Use /MT instead of /MD ##
@@ -44,6 +45,13 @@ endif()
 link_libraries(
     "${CMAKE_CURRENT_SOURCE_DIR}\\src\\Helpers\\oo2core_8_win64.lib"
 )
+
+if (USE_JSON)
+    message("USING JSON")
+    add_compile_definitions(USE_JSON)
+    find_package(RapidJSON CONFIG REQUIRED)
+    include_directories(${RAPIDJSON_INCLUDE_DIRS})
+endif()
 
 
 ## Source Files ##
@@ -90,7 +98,7 @@ endif()
 
 ## Define target ##
 
-add_executable(ZenReader ${ZenReader_SOURCES})
+add_executable(ZenReader ${ZenReader_SOURCES} "src/Exports/UObject.h")
 
 
 ## Properties ##

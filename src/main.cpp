@@ -1,6 +1,6 @@
 #include "ZGame.h"
-
 #include "Helpers/oodle2.h"
+
 #include <cstdarg>
 
 #ifdef TRACY_ENABLE
