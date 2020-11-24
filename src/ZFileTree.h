@@ -34,38 +34,38 @@ namespace Zen {
 		template<bool CheckIfAlreadyExists>
 		ZFileTree& AddFolder(const char* FolderName, typename Key::KeySize NameSize) {
 			if constexpr (CheckIfAlreadyExists) {
-				auto ChildIter = SearchValues(FolderHashes, Folders, FolderName, NameSize);
+				auto ChildIter = Folders.SearchValues(FolderName, NameSize);
 				if (ChildIter != Folders.end()) {
 					return ChildIter->second;
 				}
 			}
-			FolderHashes.emplace_back(Helpers::Hash::Crc32(FolderName, NameSize));
-			return Folders.emplace_back(Key(FolderName, NameSize), ZFileTree()).second;
+
+			return Folders.emplace_back(FolderName, NameSize, ZFileTree());
 		}
 
 		template<bool CheckIfAlreadyExists>
 		ZPackage<Key>& AddPackage(const char* PackageName, typename Key::KeySize NameSize) {
 			if constexpr (CheckIfAlreadyExists) {
-				auto ChildIter = SearchValues(FileHashes, Files, PackageName, NameSize);
+				auto ChildIter = Files.SearchValues(PackageName, NameSize);
 				if (ChildIter != Files.end()) {
 					return ChildIter->second;
 				}
 			}
-			FileHashes.emplace_back(Helpers::Hash::Crc32(PackageName, NameSize));
-			return Files.emplace_back(Key(PackageName, NameSize), ZPackage<Key>()).second;
+
+			return Files.emplace_back(PackageName, NameSize, ZPackage<Key>());
 		}
 
 		// TODO: make const, compiler errors Sadge
 		ZPackage<Key>* TryGetPackage(const char* Path) {
 			const char* Separator = strchr(Path, '/');
 			if (Separator) {
-				auto ChildIter = SearchValues(FolderHashes, Folders, Path, Separator - Path);
+				auto ChildIter = Folders.SearchValues(Path, Separator - Path);
 				if (ChildIter != Folders.end()) {
 					return ChildIter->second.TryGetPackage(Separator + 1);
 				}
 			}
 			else {
-				auto ChildIter = SearchValues(FileHashes, Files, Path, strlen(Path));
+				auto ChildIter = Files.SearchValues(Path, strlen(Path));
 				if (ChildIter != Files.end()) {
 					return &ChildIter->second;
 				}
@@ -74,9 +74,7 @@ namespace Zen {
 		}
 
 	private:
-		std::vector<uint32_t> FolderHashes;
-		std::vector<uint32_t> FileHashes;
-		std::vector<std::pair<Key, ZFileTree>> Folders;
-		std::vector<std::pair<Key, ZPackage<Key>>> Files;
+		ZSmallMap<Key, ZFileTree> Folders;
+		ZSmallMap<Key, ZPackage<Key>> Files;
 	};
 }

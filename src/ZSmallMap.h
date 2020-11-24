@@ -56,9 +56,19 @@ namespace Zen {
 		std::unique_ptr<char[]> Data;
 	};
 
-	namespace {
-		template<typename ValueType, typename KeyType>
-		decltype(auto) SearchValues(const std::vector<uint32_t>& Hashes, std::vector<std::pair<KeyType, ValueType>>& Names, const char* KeyString, typename KeyType::KeySize KeyStringSize) {
+	template<typename KeyType, typename ValueType>
+	class ZSmallMap {
+	public:
+		decltype(auto) end() const {
+			return Names.end();
+		}
+
+		ValueType& emplace_back(const char* KeyString, typename KeyType::KeySize KeyStringSize, ValueType&& Value) {
+			Hashes.emplace_back(Helpers::Hash::Crc32(KeyString, KeyStringSize));
+			return Names.emplace_back(KeyType(KeyString, KeyStringSize), std::forward<ValueType&&>(Value)).second;
+		}
+
+		decltype(auto) SearchValues(const char* KeyString, typename KeyType::KeySize KeyStringSize) {
 			if (Hashes.size() != 0) {
 				uint32_t TargetHash = Helpers::Hash::Crc32(KeyString, KeyStringSize);
 				for (int i = 0; i < Hashes.size(); ++i) {
@@ -74,5 +84,9 @@ namespace Zen {
 			}
 			return Names.end();
 		}
-	}
+
+	private:
+		std::vector<uint32_t> Hashes;
+		std::vector<std::pair<KeyType, ValueType>> Names;
+	};
 }

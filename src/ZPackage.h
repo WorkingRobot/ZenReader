@@ -23,16 +23,16 @@ namespace Zen {
 			}
 
 			if (!MiscExts) {
-				MiscExts = std::make_unique<MiscExtMap>();
+				MiscExts = std::make_unique<ZSmallMap<Key, ZFile>>();
 			}
 			if constexpr (CheckIfAlreadyExists) {
-				auto ChildIter = SearchValues(MiscExts->ExtHashes, MiscExts->Exts, Extension, ExtensionSize);
-				if (ChildIter != MiscExts->Exts.end()) {
+				auto ChildIter = MiscExts->SearchValues(Extension, ExtensionSize);
+				if (ChildIter != MiscExts->end()) {
 					return ChildIter->second;
 				}
 			}
-			MiscExts->ExtHashes.emplace_back(Helpers::Hash::Crc32(Extension, ExtensionSize));
-			return MiscExts->Exts.emplace_back(std::make_pair(Key(Extension, ExtensionSize), ZFile(std::forward<Args>(FileArgs)...))).second;
+
+			return MiscExts->emplace_back(Extension, ExtensionSize, ZFile(std::forward<Args>(FileArgs)...));
 		}
 
 		ZFile* GetFile(const char* Extension) {
@@ -44,18 +44,18 @@ namespace Zen {
 				}
 			}
 			else if (MiscExts) {
-				auto ChildIter = SearchValues(MiscExts->ExtHashes, MiscExts->Exts, Extension, strlen(Extension));
-				if (ChildIter != MiscExts->Exts.end()) {
+				auto ChildIter = MiscExts->SearchValues(Extension, strlen(Extension));
+				if (ChildIter != MiscExts->end()) {
 					return &ChildIter->second;
 				}
 			}
 			return nullptr;
 		}
 
-		ZExport GetExport(const ZGlobalData& GlobalData) {
+		ZExport GetExport(const ZGlobalData& GlobalData, const Providers::BaseProvider& SchemaProvider) {
 			return ZExport([this](const char* Extension) {
 				return GetFile(Extension);
-			}, GlobalData);
+			}, GlobalData, SchemaProvider);
 		}
 
 	private:
@@ -98,12 +98,7 @@ namespace Zen {
 			}
 		}
 
-		struct MiscExtMap {
-			std::vector<uint32_t> ExtHashes;
-			std::vector<std::pair<Key, ZFile>> Exts;
-		};
-
 		std::vector<std::pair<EAssetType, ZFile>> KnownExts;
-		std::unique_ptr<MiscExtMap> MiscExts;
+		std::unique_ptr<ZSmallMap<Key, ZFile>> MiscExts;
 	};
 }
