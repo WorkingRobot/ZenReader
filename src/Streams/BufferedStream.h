@@ -26,8 +26,7 @@ namespace Zen::Streams {
         }
 
         BaseStream& write(const char* Buf, size_t BufCount) override {
-            // unsupported lol
-            return *this;
+            throw Exceptions::UnsupportedOperationException("Write operations aren't supported for BufferedStreams");
         }
 
         BaseStream& read(char* Buf, size_t BufCount) override {

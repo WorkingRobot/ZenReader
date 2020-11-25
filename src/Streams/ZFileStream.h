@@ -22,8 +22,7 @@ namespace Zen::Streams {
 
         }
 
-        ZUnoptimizedFileStream(const FIoChunkId& ChunkId, const BaseContainer& Container) : ZUnoptimizedFileStream(Container.Toc.GetChunkIdx(ChunkId), Container)
-        {
+        ZUnoptimizedFileStream(const FIoChunkId& ChunkId, const BaseContainer& Container) : ZUnoptimizedFileStream(Container.Toc.GetChunkIdx(ChunkId), Container) {
             if (ChunkIdIdx == -1) {
                 throw Exceptions::InvalidChunkIdException("The chunk id used is invalid");
             }

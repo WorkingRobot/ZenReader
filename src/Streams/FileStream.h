@@ -22,8 +22,7 @@ namespace Zen::Streams {
         FileStream& operator=(const FileStream&) = delete;
 
         BaseStream& write(const char* Buf, size_t BufCount) override {
-            //BaseStream.write(Buf, BufCount);
-            return *this;
+            throw Exceptions::UnsupportedOperationException("Write operations aren't supported for FileStreams");
         }
 
         BaseStream& read(char* Buf, size_t BufCount) override {
