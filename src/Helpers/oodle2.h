@@ -13,7 +13,12 @@ extern "C"
 	typedef uint32_t U32;
 	typedef uint64_t U64;
 	typedef int32_t S32;
-	typedef S32 SINTa; // i think that's what this is?
+	typedef int64_t S64;
+#if defined(__x86_64__) || defined(__x86_64) || defined(_M_X64)
+	typedef S64 SINTa;
+#else
+	typedef S32 SINTa;
+#endif
 
 	enum OodleLZ_Compressor {
 		OodleLZ_Compressor_Invalid = -1,
@@ -84,7 +89,7 @@ extern "C"
 
 #define OODLELZ_BLOCK_LEN 0x40000
 #define OODLELZ_LOCALDICTIONARYSIZE_MAX 1<<30
-#define OODLELZ_FAILED 0 // i think so?
+#define OODLELZ_FAILED 0
 #define OODLEAPI __stdcall
 
 	// opts[5]: dictionarySize limit
