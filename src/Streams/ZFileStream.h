@@ -1,16 +1,18 @@
 #pragma once
 
-#include "BaseStream.h"
+#include "../Exceptions/BaseException.h"
 #include "../Helpers/AES.h"
 #include "../Helpers/Align.h"
 #include "../Helpers/Decompress.h"
+#include "../ZContainer.h"
+#include "BufferedStream.h"
 
 #include <filesystem>
 
 namespace Zen::Streams {
-    class ZFileStream : public BaseStream {
+    class ZUnoptimizedFileStream : public BaseStream {
     public:
-        ZFileStream(uint32_t ChunkIdIdx, const BaseContainer& Container) :
+        ZUnoptimizedFileStream(uint32_t ChunkIdIdx, const BaseContainer& Container) :
             ChunkIdIdx(ChunkIdIdx),
             Container(Container),
             Buffer(std::make_unique<char[]>(Container.Toc.Header.CompressionBlockSize)),
@@ -20,16 +22,15 @@ namespace Zen::Streams {
 
         }
 
-        ZFileStream(const FIoChunkId& ChunkId, const BaseContainer& Container) : ZFileStream(Container.Toc.GetChunkIdx(ChunkId), Container)
+        ZUnoptimizedFileStream(const FIoChunkId& ChunkId, const BaseContainer& Container) : ZUnoptimizedFileStream(Container.Toc.GetChunkIdx(ChunkId), Container)
         {
             if (ChunkIdIdx == -1) {
-                // TODO: THROW EXCEPTION
+                throw Exceptions::InvalidChunkIdException("The chunk id used is invalid");
             }
         }
 
         BaseStream& write(const char* Buf, size_t BufCount) override {
-            // unsupported lol
-            return *this;
+            throw Exceptions::UnsupportedOperationException("Write operations aren't supported for ZFileStreams");
         }
 
         BaseStream& read(char* Buf, size_t BufCount) override {
@@ -91,9 +92,10 @@ namespace Zen::Streams {
             Container.CasStream.seek(Entry.GetOffset(), BaseStream::Beg);
             Container.CasStream.read(ReadBuffer.get(), ReadAmt);
             if (Container.Toc.Header.ContainerFlags & EIoContainerFlags::Encrypted) {
-                // TODO: Throw exception if the key has no value
-                // But how would you get here if there was no key?
-                Helpers::AES::DecodeInPlace(Container.Key.value(), ReadBuffer.get(), ReadAmt);
+                if (Container.Key.has_value()) {
+                    Helpers::AES::DecodeInPlace(Container.Key.value(), ReadBuffer.get(), ReadAmt);
+                }
+                throw Exceptions::KeyRequiredException("An AES key is required for this asset");
             }
             if (Entry.GetCompressionMethodIndex()) {
                 Helpers::Decompress(Buffer.get(), Entry.GetUncompressedSize(), ReadBuffer.get(), ReadAmt, Container.Toc.CompressionMethodNames[Entry.GetCompressionMethodIndex() - 1]);
@@ -125,4 +127,8 @@ namespace Zen::Streams {
         size_t BufferBlockIdx;
         size_t Position;
     };
+
+    // Having a buffered stream instead saves potentially millions of calls to SetFilePointerEx (saves a massive amount of time when exporting many packages)
+    // 4kb default buffer size (BufferedStream's default 256kb isn't efficient for small assets, and the penalty isn't very big for larger assets)
+    using ZFileStream = BufferedStream<ZUnoptimizedFileStream, 1 << 12>;
 }

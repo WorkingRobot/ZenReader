@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Exceptions/BaseException.h"
 #include "../Exports/UObject.h"
 #include "../Structs/FLinearColor.h"
 #include "../Structs/FVector2D.h"
@@ -9,6 +10,7 @@
 
 namespace Zen::Properties {
 	using namespace Structs;
+	using namespace Exceptions;
 
 	class StructProperty : public BaseProperty {
 	public:
@@ -72,10 +74,9 @@ namespace Zen::Properties {
 						this->Value.emplace<std::shared_ptr<Exports::UObject>>(std::make_shared<Exports::UObject>(InputStream, *Schema, Exports::StructFallback));
 						break;
 					}
+					throw SchemaNotFoundException("The schema for struct \"%s\" was not found", PropData.GetStructType().c_str());
 				}
-				// TODO: THROW EXCEPTION HERE
-				//printf("couldn't get the schema for %s\n", PropData.GetStructType().c_str());
-				break;
+				throw SchemaNotFoundException("A schema provider was not given");
 			}
 		}
 

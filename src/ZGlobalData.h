@@ -1,10 +1,15 @@
 #pragma once
 
-#include "Streams/BaseStream.h"
+#include "Exceptions/BaseException.h"
 #include "Structs/FScriptObjectEntry.h"
+#include "ZContainer.h"
+#include "Streams/ZFileStream.h"
 #include "ZNameMap.h"
 
 namespace Zen {
+	using namespace Structs;
+	using namespace Streams;
+
 	class ZGlobalData {
 	public:
 		ZNameMap NameMap;
@@ -45,7 +50,7 @@ namespace Zen {
 					return Entry;
 				}
 			}
-			// TODO: THROW IDX NOT FOUND EXCEPTION
+			throw Exceptions::ScriptObjectNotFoundException("A matching ScriptObjectEntry was not found for a FPackageObjectIndex (%lld)", Idx.TypeAndId);
 		}
 
 	};

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Streams/BaseStream.h"
-#include "../Exceptions/InvalidMagicException.h"
+#include "../Exceptions/BaseException.h"
 #include "../Enums/EIoStoreTocVersion.h"
 #include "../Enums/EIoContainerFlags.h"
 #include "FGuid.h"

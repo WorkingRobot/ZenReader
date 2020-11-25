@@ -35,7 +35,7 @@ namespace Zen {
 			return MiscExts->emplace_back(Extension, ExtensionSize, ZFile(std::forward<Args>(FileArgs)...));
 		}
 
-		ZFile* GetFile(const char* Extension) {
+		const ZFile* GetFile(const char* Extension) const {
 			auto AssetType = GetAssetType(Extension, strlen(Extension));
 			if (AssetType != EAssetType::UNKNOWN) {
 				auto ChildIter = std::find_if(KnownExts.begin(), KnownExts.end(), [AssetType](const auto& ExtPair) { return ExtPair.first == AssetType; });
@@ -52,7 +52,7 @@ namespace Zen {
 			return nullptr;
 		}
 
-		ZExport GetExport(const ZGlobalData& GlobalData, const Providers::BaseProvider& SchemaProvider) {
+		ZExport GetExport(const ZGlobalData& GlobalData, const Providers::BaseProvider& SchemaProvider) const {
 			return ZExport([this](const char* Extension) {
 				return GetFile(Extension);
 			}, GlobalData, SchemaProvider);

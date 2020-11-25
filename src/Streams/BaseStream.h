@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Exceptions/BaseException.h"
 #include "Properties.h"
 
 #include <memory>
@@ -234,8 +235,7 @@ namespace Zen::Streams {
                 // If SaveNum cannot be negated due to integer overflow, Ar is corrupted.
                 if (SaveNum == INT_MIN)
                 {
-                    // TODO: THROW HERE
-                    return *this; // archive corrupted
+                    throw Exceptions::ArchiveCorruptedException("The archive is corrupted (tried to read a string with an invalid length)");
                 }
 
                 SaveNum = -SaveNum;

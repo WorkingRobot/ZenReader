@@ -25,7 +25,7 @@ namespace Zen {
 		BaseStream& TocStream;
 		BaseStream& CasStream;
 		FIoStoreTocResource Toc;
-		std::optional<FAESKey> Key; // TODO: Check if this is necessary for saving significant memory, it might just be a big slowdown
+		std::optional<FAESKey> Key;
 	};
 
 	template<class TocStreamType, class CasStreamType>
@@ -35,8 +35,8 @@ namespace Zen {
 		template<typename KeyDelegateCall, typename FileTree>
 		ZContainer(TocStreamType&& _TocStream, CasStreamType&& _CasStream, KeyDelegateCall KeyDelegate, FileTree& Tree) :
 			BaseContainer(TocStreamHolder, CasStreamHolder),
-			TocStreamHolder(std::move(_TocStream)),
-			CasStreamHolder(std::move(_CasStream))
+			TocStreamHolder(std::forward<TocStreamType>(_TocStream)),
+			CasStreamHolder(std::forward<CasStreamType>(_CasStream))
 		{
 			TocStream >> Toc;
 

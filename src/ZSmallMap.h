@@ -58,6 +58,9 @@ namespace Zen {
 
 	template<typename KeyType, typename ValueType>
 	class ZSmallMap {
+		std::vector<uint32_t> Hashes;
+		std::vector<std::pair<KeyType, ValueType>> Names;
+
 	public:
 		decltype(auto) end() const {
 			return Names.end();
@@ -68,7 +71,7 @@ namespace Zen {
 			return Names.emplace_back(KeyType(KeyString, KeyStringSize), std::forward<ValueType&&>(Value)).second;
 		}
 
-		decltype(auto) SearchValues(const char* KeyString, typename KeyType::KeySize KeyStringSize) {
+		typename decltype(Names)::iterator SearchValues(const char* KeyString, typename KeyType::KeySize KeyStringSize) {
 			if (Hashes.size() != 0) {
 				uint32_t TargetHash = Helpers::Hash::Crc32(KeyString, KeyStringSize);
 				for (int i = 0; i < Hashes.size(); ++i) {
@@ -85,8 +88,9 @@ namespace Zen {
 			return Names.end();
 		}
 
-	private:
-		std::vector<uint32_t> Hashes;
-		std::vector<std::pair<KeyType, ValueType>> Names;
+		typename decltype(Names)::const_iterator SearchValues(const char* KeyString, typename KeyType::KeySize KeyStringSize) const {
+			// Forces a call to the non const SearchValues and converts the return value to a const_iterator
+			return ((std::remove_const<std::remove_pointer<decltype(this)>::type>::type*)this)->SearchValues(KeyString, KeyStringSize);
+		}
 	};
 }

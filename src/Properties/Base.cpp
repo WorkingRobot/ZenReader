@@ -25,6 +25,8 @@
 #include "Set.h"
 #include "Enum.h"
 
+#include "../Exceptions/BaseException.h"
+
 namespace Zen::Properties {
 	template<EReadType ReadType, typename T, typename... Args>
 	__forceinline std::unique_ptr<BaseProperty> Construct(Args&&... PropArgs) {
@@ -76,8 +78,7 @@ namespace Zen::Properties {
 
 #undef CASE
 		default:
-			// TODO: throw exception instead
-			return nullptr;
+			throw Exceptions::PropertyTypeNotFoundException("The property type is unknown and cannot be deserialized");
 		}
 	}
 

@@ -55,8 +55,7 @@ namespace Zen {
 			return Files.emplace_back(PackageName, NameSize, ZPackage<Key>());
 		}
 
-		// TODO: make const, compiler errors Sadge
-		ZPackage<Key>* TryGetPackage(const char* Path) {
+		const ZPackage<Key>* TryGetPackage(const char* Path) const {
 			const char* Separator = strchr(Path, '/');
 			if (Separator) {
 				auto ChildIter = Folders.SearchValues(Path, Separator - Path);

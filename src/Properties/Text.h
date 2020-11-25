@@ -16,7 +16,7 @@ namespace Zen::Properties {
 
 		TextProperty(Streams::BaseStream& InputStream, EReadMap) : TextProperty(InputStream) {}
 
-		TextProperty(Streams::BaseStream& InputStream, EReadZero) : Value{ ETextFlag::Immutable } {}
+		TextProperty(Streams::BaseStream& InputStream, EReadZero) : Value{ nullptr, ETextFlag::Immutable } {}
 
 		EPropertyType GetType() const override {
 			return EPropertyType::TextProperty;

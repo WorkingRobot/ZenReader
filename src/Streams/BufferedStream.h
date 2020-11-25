@@ -9,10 +9,20 @@ namespace Zen::Streams {
     template<class WrappedStream, size_t BufferSize = 1 << 18>
     class BufferedStream : public BaseStream {
     public:
-        BufferedStream(WrappedStream&& Stream) : BaseStream(std::move(Stream)), Buffer(new char[BufferSize])
+        template<typename... Args>
+        BufferedStream(Args&&... args) :
+            BaseStream(std::forward<Args>(args)...),
+            Buffer(new char[BufferSize]),
+            BufferPosition(-1),
+            Position(BaseStream.tell())
+        {}
+
+        BufferedStream(WrappedStream&& Stream) :
+            BaseStream(std::forward<WrappedStream>(Stream)),
+            Buffer(new char[BufferSize]),
+            BufferPosition(-1),
+            Position(BaseStream.tell())
         {
-            BufferPosition = -1;
-            Position = BaseStream.tell();
         }
 
         BaseStream& write(const char* Buf, size_t BufCount) override {

@@ -5,6 +5,7 @@
 #include "ZNameMap.h"
 #include "Exports/UObject.h"
 #include "Providers/Base.h"
+#include "Streams/BufferedStream.h"
 #include "Structs/FPackageSummary.h"
 #include "Structs/FPackageObjectIndex.h"
 #include "Structs/FExportMapEntry.h"
@@ -18,7 +19,7 @@ namespace Zen {
 	class ZExport {
 	public:
 		// https://github.com/EpicGames/UnrealEngine/blob/15690f68b984ec2fb9269dd59ff9c3c42b77bd67/Engine/Source/Developer/IoStoreUtilities/Private/IoStoreUtilities.cpp#L929
-		ZExport(std::function<ZFile*(const char*)> GetExtStream, const ZGlobalData& GlobalData, const Providers::BaseProvider& SchemaProvider) {
+		ZExport(std::function<const ZFile*(const char*)> GetExtStream, const ZGlobalData& GlobalData, const Providers::BaseProvider& SchemaProvider) {
 			auto UAssetFile = GetExtStream("uasset");
 			if (!UAssetFile) {
 				return;
