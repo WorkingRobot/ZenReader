@@ -6,6 +6,7 @@
 #include "Streams/BufferedStream.h"
 #include "Streams/FileStream.h"
 #include "Helpers/Stopwatch.h"
+#include "Exports/UCurveTable.h"
 #include "ZGlobalData.h"
 
 #include <chrono>
@@ -29,7 +30,7 @@ namespace Zen {
 							return false;
 						},
 						Tree
-							);
+					);
 					if (file.path().stem() == "global") {
 						Helpers::Stopwatch s1("Load global data");
 						GlobalData = ZGlobalData(Container);
@@ -40,19 +41,22 @@ namespace Zen {
 			s0.End();
 
 			Helpers::Stopwatch s2("Get package");
-			auto Package = Tree.TryGetPackage("FortniteGame/Content/Catalog/DisplayAssets/DA_Featured_TripleScoopBundle");
+			auto Package = Tree.TryGetPackage("FortniteGame/Content/Athena/Balance/DataTables/AthenaGameData");
 			s2.End();
-			//Package->GetFile("uasset")->GetStream().Dump("triplescoop.ucasset");
+			//Package->GetFile("uasset")->GetStream().Dump("athenadatatable.ucasset");
 
 			Helpers::Stopwatch s3("Load provider");
 			Providers::FModelProvider Provider;
 			s3.End();
 
 			Helpers::Stopwatch s4("Get exports");
-			for (int i = 0; i < 5000; ++i) {
-				auto Export = Package->GetExport(GlobalData, Provider);
-			}
+			auto Export = Package->GetExport(GlobalData, Provider);
+			auto Map = Export.Get<Exports::UCurveTable>();
 			s4.End();
+			getchar();
+			for (auto& Entry : Map->RowMap) {
+				Entry.first.Get(Export.GetNameMap()).c_str();
+			}
 		}
 
 		~ZGame()

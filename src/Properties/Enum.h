@@ -1,8 +1,11 @@
 #pragma once
 
+#include "../Exceptions/BaseException.h"
 #include "Base.h"
 
 namespace Zen::Properties {
+	using namespace Exceptions;
+
 	class EnumProperty : public BaseProperty {
 	public:
 		std::string Value;
@@ -20,14 +23,20 @@ namespace Zen::Properties {
 			}
 			// If a normal (not unversioned) reader, read it a as FName instead
 			auto Provider = (const Providers::BaseProvider*)InputStream.GetProperty<Streams::PropId::Provider>();
-			if (Provider) {
-				auto Enum = Provider->GetEnum(PropData.GetEnumName());
-				if (Enum) {
-					this->Value = PropData.GetEnumName().string() + "::" + (*Enum)[EnumIdx].string();
-					return;
-				}
+			if (!Provider) {
+				throw EnumNotFoundException("A schema/enum provider was not given");
 			}
-			this->Value = PropData.GetEnumName().string() + "::" + std::to_string(EnumIdx);
+			auto Enum = Provider->GetEnum(PropData.GetEnumName());
+			if (!Enum) {
+				throw EnumNotFoundException("The enum \"%s\" was not found", PropData.GetEnumName().c_str());
+			}
+			auto EnumIdxName = (*Enum)[EnumIdx];
+			if (EnumIdxName) {
+				this->Value = PropData.GetEnumName().string() + "::" + EnumIdxName->string();
+			}
+			else {
+				this->Value = PropData.GetEnumName().string() + "::" + std::to_string(EnumIdx);
+			}
 		}
 
 		EnumProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadArray) : EnumProperty(InputStream, PropData) {}

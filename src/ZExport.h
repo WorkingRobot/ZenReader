@@ -3,7 +3,7 @@
 #include "ZFile.h"
 #include "ZGlobalData.h"
 #include "ZNameMap.h"
-#include "Exports/UObject.h"
+#include "Exports/Serializer.h"
 #include "Providers/Base.h"
 #include "Streams/BufferedStream.h"
 #include "Structs/FPackageSummary.h"
@@ -12,6 +12,7 @@
 #include "Structs/FPackageId.h"
 #include "Structs/FArc.h"
 
+#include <any>
 #include <functional>
 
 namespace Zen {
@@ -66,24 +67,41 @@ namespace Zen {
 				UAsset >> Arcs;
 			}
 
+			Exports.reserve(ExportCount);
 			auto ExportOffset = Summary.GraphDataOffset + Summary.GraphDataSize;
+			PropertyHolder<PropId::NameMap> UAssetNameMap(UAsset, (void*)&NameMap);
 			PropertyHolder<PropId::Provider> UAssetProvider(UAsset, (void*)&SchemaProvider);
 			for (auto& Export : ExportMap) {
 				UAsset.seek(ExportOffset, BaseStream::Beg);
 
-				// GetEntry is always global (in the global utoc) anyway, so it's safe to ask the global namemap directly
+				// GetEntry is always global (in the global utoc), so it's safe to ask the global namemap directly
 				auto& ExportType = GlobalData.NameMap.GetName(GlobalData.GetEntry(Export.ClassIndex).ObjectName).Name;
 				
-				auto Schema = SchemaProvider.GetSchema(ExportType);
-				if (Schema) {
-					Exports::UObject(UAsset, *Schema);
-				}
+				Exports.emplace_back(Exports::Serialize(UAsset, ExportType));
 
 				ExportOffset += Export.CookedSerialSize;
 			}
 		}
 
+		template<class T>
+		const T* Get() const {
+			for (auto& Export : Exports) {
+				auto ret = std::any_cast<std::shared_ptr<T>>(&Export);
+				if (ret) {
+					return ret->get();
+				}
+			}
+			return nullptr;
+		}
+
+		const ZNameMap& GetNameMap() const {
+			return NameMap;
+		}
+
+
 	private:
+		std::vector<std::any> Exports;
+
 		FPackageSummary Summary;
 
 		ZNameMap NameMap;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Base.h"
+#include "Serializer.h"
 
 namespace Zen::Properties {
 	class SetProperty : public BaseProperty {
@@ -12,7 +13,7 @@ namespace Zen::Properties {
 			int NumKeysToRemove;
 			InputStream >> NumKeysToRemove;
 			for (int i = 0; i < NumKeysToRemove; ++i) {
-				BaseProperty::Serialize<EReadType::ARRAY>(InputStream, PropData, PropData.GetArrayInnerType());
+				Serialize<EReadType::ARRAY>(InputStream, PropData, PropData.GetArrayInnerType());
 			}
 
 			int NumEntries;
@@ -20,7 +21,7 @@ namespace Zen::Properties {
 			Value.reserve(NumEntries);
 
 			for (int i = 0; i < NumEntries; ++i) {
-				Value.emplace_back(BaseProperty::Serialize<EReadType::ARRAY>(InputStream, PropData, PropData.GetArrayInnerType()));
+				Value.emplace_back(Serialize<EReadType::ARRAY>(InputStream, PropData, PropData.GetArrayInnerType()));
 			}
 		}
 

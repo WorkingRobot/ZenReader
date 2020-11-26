@@ -3,6 +3,8 @@
 #include "../Exceptions/BaseException.h"
 #include "../Exports/UObject.h"
 #include "../Structs/FLinearColor.h"
+#include "../Structs/FSimpleCurveKey.h"
+#include "../Structs/FRichCurveKey.h"
 #include "../Structs/FVector2D.h"
 #include "Base.h"
 
@@ -39,8 +41,8 @@ namespace Zen::Properties {
 				//CASE("SoftClassPath", FSoftObjectPath);
 				//CASE("Color", FColor);
 				CASE("LinearColor", FLinearColor);
-				//CASE("SimpleCurveKey", FSimpleCurveKey);
-				//CASE("RichCurveKey", FRichCurveKey);
+				CASE("SimpleCurveKey", FSimpleCurveKey);
+				CASE("RichCurveKey", FRichCurveKey);
 				//CASE("FrameNumber", FFrameNumber);
 				//CASE("SmartName", FSmartName);
 				//CASE("PerPlatformFloat", FPerPlatformFloat);

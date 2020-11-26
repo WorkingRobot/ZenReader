@@ -1,9 +1,12 @@
 #pragma once
 
-#include "../Streams/BaseStream.h"
+#include "../Exceptions/BaseException.h"
 #include "../Helpers/Align.h"
+#include "../Streams/BaseStream.h"
 
 namespace Zen::Structs {
+	using namespace Exceptions;
+
 	class FUnversionedHeader {
 	public:
 		// Not defined for public use, we'll just keep it here
@@ -40,7 +43,6 @@ namespace Zen::Structs {
 			uint32_t RemainingFragmentValues;
 			bool bIsDone;
 			uint32_t SchemaIterator;
-			bool NonZero;
 
 		public:
 			FIterator(const FUnversionedHeader& Header) :
@@ -48,14 +50,15 @@ namespace Zen::Structs {
 				ZeroMaskIterator(Header.ZeroMask.cbegin()),
 				RemainingFragmentValues(0),
 				bIsDone(false),
-				SchemaIterator(0),
-				NonZero(true)
+				SchemaIterator(0)
 			{
 				Skip();
 			}
 
 			FIterator& operator++() {
-				// Assert !bIsDone
+				if (bIsDone) {
+					throw UnsupportedOperationException("Attempting to go past the end of the FIterator");
+				}
 				SchemaIterator++;
 				RemainingFragmentValues--;
 				if (FragmentIterator->bHasAnyZeroes) {
@@ -71,7 +74,6 @@ namespace Zen::Structs {
 					FragmentIterator++;
 					Skip();
 				}
-				NonZero = !FragmentIterator->bHasAnyZeroes || !*ZeroMaskIterator;
 				return *this;
 			}
 
@@ -84,7 +86,7 @@ namespace Zen::Structs {
 			}
 
 			bool IsNonZero() const {
-				return NonZero;
+				return !FragmentIterator->bHasAnyZeroes || !*ZeroMaskIterator;
 			}
 
 			bool ShouldSerialize() const {
@@ -101,9 +103,8 @@ namespace Zen::Structs {
 
 				while (!FragmentIterator->ValueNum) {
 					if (FragmentIterator->bIsLast) {
-						printf("Iterator error\n");
+						throw ArchiveCorruptedException("Iterator needs data past the last FFragment");
 					}
-					// Assert !FragmentIterator->bIsLast
 					FragmentIterator++;
 					SchemaIterator += FragmentIterator->SkipNum;
 				}
@@ -139,14 +140,13 @@ namespace Zen::Structs {
 
 	private:
 		void LoadZeroMaskData(Streams::BaseStream& InputStream, int32_t NumBits) {
-			printf("Loading zero mask data, not been tested\n");
-			// MSVC specific lol
+			// MSVC STL specific, not tested on others
 			if (NumBits <= 8) {
-				ZeroMask.resize(Helpers::Align<8>(NumBits));
+				ZeroMask.resize(8);
 				InputStream >> *(uint8_t*)ZeroMask._Myvec.data();
 			}
 			else if (NumBits <= 16) {
-				ZeroMask.resize(Helpers::Align<16>(NumBits));
+				ZeroMask.resize(16);
 				InputStream >> *(uint16_t*)ZeroMask._Myvec.data();
 			}
 			else {

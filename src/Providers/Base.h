@@ -19,7 +19,7 @@ namespace Zen::Providers {
 
 	class BaseEnum {
 	public:
-		virtual const BaseName& operator[](int) const = 0;
+		virtual const BaseName* operator[](int) const = 0;
 	};
 
 	class BasePropertyData {

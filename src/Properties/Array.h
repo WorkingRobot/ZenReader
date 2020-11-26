@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Base.h"
+#include "Serializer.h"
 
 namespace Zen::Properties {
 	class ArrayProperty : public BaseProperty {
@@ -16,7 +17,7 @@ namespace Zen::Properties {
 			// https://github.com/iAmAsval/FModel/blob/e256486b98551c467fa835c0518a00e9f9d97462/FModel/PakReader/Parsers/PropertyTagData/ArrayProperty.cs#L20
 
 			for (int i = 0; i < SerializeNum; ++i) {
-				Value.emplace_back(BaseProperty::Serialize<EReadType::ARRAY>(InputStream, PropData, PropData.GetArrayInnerType()));
+				Value.emplace_back(Serialize<EReadType::ARRAY>(InputStream, PropData, PropData.GetArrayInnerType()));
 			}
 		}
 

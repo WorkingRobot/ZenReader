@@ -41,8 +41,11 @@ namespace Zen::Providers::FModel {
 		public:
 			EnumImpl(std::vector<const BaseName*>&& Names) : Names(std::move(Names)) {}
 
-			const BaseName& operator[](int i) const override {
-				return *Names[i];
+			const BaseName* operator[](int i) const override {
+				if (i >= Names.size()) {
+					return nullptr;
+				}
+				return Names[i];
 			}
 		};
 

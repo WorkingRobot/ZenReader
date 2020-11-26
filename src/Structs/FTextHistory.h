@@ -3,6 +3,7 @@
 #include "../Enums/EDateTimeStyle.h"
 #include "../Enums/ETextHistoryType.h"
 #include "../Enums/ETransformType.h"
+#include "../Exceptions/BaseException.h"
 #include "../Streams/BaseStream.h"
 #include "FDateTime.h"
 #include "FFormatArgumentValue.h"
@@ -16,6 +17,7 @@
 
 namespace Zen::Structs {
 	using namespace Enums;
+	using namespace Exceptions;
 
 	template<ETextHistoryType Type>
 	struct FTextHistoryData : public FTextData {
@@ -275,7 +277,11 @@ namespace Zen::Structs {
 		friend Streams::BaseStream& operator>>(Streams::BaseStream& InputStream, FTextHistoryData<ETextHistoryType::TextGenerator>& Value) {
 			InputStream >> Value.GeneratorTypeID;
 
-			if (!Value.GeneratorTypeID.IsNone()) {
+			auto NameMap = (const ZNameMap*)InputStream.GetProperty<Streams::PropId::NameMap>();
+			if (!NameMap) {
+				throw NameMapNotFoundException("Name map property isn't set on the stream");
+			}
+			if (!Value.GeneratorTypeID.IsNone(*NameMap)) {
 				InputStream >> Value.GeneratorContents;
 			}
 

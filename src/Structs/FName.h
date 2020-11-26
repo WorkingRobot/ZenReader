@@ -2,6 +2,7 @@
 
 #include "../Enums/EMappedNameType.h"
 #include "../Streams/BaseStream.h"
+#include "../ZNameMap.h"
 
 namespace Zen::Structs {
 	class FName {
@@ -17,9 +18,13 @@ namespace Zen::Structs {
 			return InputStream;
 		}
 
-		bool IsNone() const {
-			printf("yo\n");
-			return false;
+		const std::string& Get(const ZNameMap& NameMap) const {
+			return NameMap[Index];
+		}
+
+		// TODO: use a hash lookup or something, that would be better
+		bool IsNone(const ZNameMap& NameMap) const {
+			return Get(NameMap) == "None";
 		}
 	};
 }

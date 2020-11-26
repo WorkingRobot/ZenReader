@@ -33,8 +33,5 @@ namespace Zen::Properties {
 	class BaseProperty {
 	public:
 		virtual EPropertyType GetType() const = 0;
-
-		template<EReadType ReadType>
-		static std::unique_ptr<Properties::BaseProperty> Serialize(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EPropertyType Type);
 	};
 }

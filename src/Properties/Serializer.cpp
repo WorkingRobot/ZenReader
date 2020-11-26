@@ -1,3 +1,5 @@
+#include "Serializer.h"
+
 #include "Byte.h"
 #include "Bool.h"
 #include "Int.h"
@@ -44,7 +46,7 @@ namespace Zen::Properties {
 	}
 
 	template<EReadType ReadType>
-	static std::unique_ptr<BaseProperty> BaseProperty::Serialize(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EPropertyType Type) {
+	std::unique_ptr<BaseProperty> Serialize(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EPropertyType Type) {
 		switch (Type)
 		{
 #define CASE(Type, ...) case EPropertyType::Type: return Construct<ReadType, Properties::Type>(InputStream, __VA_ARGS__);
@@ -82,8 +84,8 @@ namespace Zen::Properties {
 		}
 	}
 
-	template std::unique_ptr<BaseProperty> BaseProperty::Serialize<EReadType::NORMAL>(Streams::BaseStream&, const Providers::BasePropertyData&, EPropertyType);
-	template std::unique_ptr<BaseProperty> BaseProperty::Serialize<EReadType::ARRAY>(Streams::BaseStream&, const Providers::BasePropertyData&, EPropertyType);
-	template std::unique_ptr<BaseProperty> BaseProperty::Serialize<EReadType::MAP>(Streams::BaseStream&, const Providers::BasePropertyData&, EPropertyType);
-	template std::unique_ptr<BaseProperty> BaseProperty::Serialize<EReadType::ZERO>(Streams::BaseStream&, const Providers::BasePropertyData&, EPropertyType);
+	template std::unique_ptr<BaseProperty> Serialize<EReadType::NORMAL>(Streams::BaseStream&, const Providers::BasePropertyData&, EPropertyType);
+	template std::unique_ptr<BaseProperty> Serialize<EReadType::ARRAY>(Streams::BaseStream&, const Providers::BasePropertyData&, EPropertyType);
+	template std::unique_ptr<BaseProperty> Serialize<EReadType::MAP>(Streams::BaseStream&, const Providers::BasePropertyData&, EPropertyType);
+	template std::unique_ptr<BaseProperty> Serialize<EReadType::ZERO>(Streams::BaseStream&, const Providers::BasePropertyData&, EPropertyType);
 }

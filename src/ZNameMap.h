@@ -1,14 +1,16 @@
 #pragma once
 
 #include "Streams/BufferStream.h"
+#include "Structs/FMappedName.h"
 #include "Structs/FNameEntryId.h"
 #include "Structs/FSerializedNameHeader.h"
 
 namespace Zen {
+	using namespace Streams;
+	using namespace Structs;
+
 	class ZNameMap {
 	public:
-		std::vector<FNameEntryId> NameMap;
-
 		ZNameMap() = default;
 
 		// https://github.com/EpicGames/UnrealEngine/blob/c7c6766c2fe5278024139d9330d872bd139633c8/Engine/Source/Runtime/Core/Private/UObject/UnrealNames.cpp#L2888
@@ -49,8 +51,15 @@ namespace Zen {
 			}
 		}
 
+		const std::string& operator[](int i) const {
+			return NameMap[i].Name;
+		}
+
 		const FNameEntryId& GetName(const FMappedName& Name) const {
 			return NameMap[Name.GetIndex()];
 		}
+
+	private:
+		std::vector<FNameEntryId> NameMap;
 	};
 }
