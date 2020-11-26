@@ -4,7 +4,9 @@
 #include "../Structs/FGuid.h"
 #include "../Structs/FUnversionedHeader.h"
 #include "../Providers/Base.h"
+#include "../Properties/Lookup.h"
 #include "../Properties/Serializer.h"
+#include "../ZSmallMap.h"
 #include "UExport.h"
 
 namespace Zen::Exports {
@@ -19,8 +21,6 @@ namespace Zen::Exports {
 
 	class UObject : public UExport {
 	public:
-		std::vector<std::unique_ptr<Properties::BaseProperty>> Props;
-
 		UObject(UObject&& other) : Props(std::move(other.Props)) {}
 
 		UObject(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema) {
@@ -29,6 +29,34 @@ namespace Zen::Exports {
 
 		UObject(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema, EStructFallback) {
 			Create<true>(InputStream, Schema);
+		}
+
+		template<typename T, typename NameType>
+		const T* TryGet(const NameType& Name) const {
+			auto Itr = Props.SearchValues(Name.c_str(), Name.size());
+			if (Itr == Props.end()) {
+				return nullptr;
+			}
+			if constexpr (!std::is_same<T, Properties::BaseProperty>::value) {
+				if (Properties::GetType<T>() != Itr->second->GetType()) {
+					return nullptr;
+				}
+			}
+			return Itr->second.get();
+		}
+
+		template<typename T, size_t Size>
+		const T* TryGet(const char(&Name)[Size]) const {
+			auto Itr = Props.SearchValues(Name, Size - 1);
+			if (Itr == Props.end()) {
+				return nullptr;
+			}
+			if constexpr (!std::is_same<T, Properties::BaseProperty>::value) {
+				if (Properties::GetType<T>() != Itr->second->GetType()) {
+					return nullptr;
+				}
+			}
+			return (T*)Itr->second.get();
 		}
 
 	private:
@@ -44,7 +72,7 @@ namespace Zen::Exports {
 						continue;
 					}
 					auto& Prop = Schema[Itr.GetSchemaItr()];
-					Props.emplace_back(Properties::Serialize<Properties::EReadType::NORMAL>(InputStream, Prop.GetData(), Prop.GetType()));
+					Props.emplace_back(Prop.GetName().c_str(), Prop.GetName().size(), Properties::Serialize<Properties::EReadType::NORMAL>(InputStream, Prop.GetData(), Prop.GetType()));
 				} while (++Itr);
 			}
 
@@ -57,5 +85,8 @@ namespace Zen::Exports {
 				}
 			}
 		}
+
+	protected:
+		ZSmallMap<StrlenKey<uint8_t>, std::unique_ptr<Properties::BaseProperty>> Props;
 	};
 }

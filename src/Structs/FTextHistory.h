@@ -12,6 +12,7 @@
 #include "FNumberFormattingOptions.h"
 #include "FText.h"
 #include "FTextData.h"
+#include "../ZExport.h"
 
 #include <optional>
 
@@ -277,11 +278,11 @@ namespace Zen::Structs {
 		friend Streams::BaseStream& operator>>(Streams::BaseStream& InputStream, FTextHistoryData<ETextHistoryType::TextGenerator>& Value) {
 			InputStream >> Value.GeneratorTypeID;
 
-			auto NameMap = (const ZNameMap*)InputStream.GetProperty<Streams::PropId::NameMap>();
-			if (!NameMap) {
-				throw NameMapNotFoundException("Name map property isn't set on the stream");
+			auto ZExp = (const ZExport*)InputStream.GetProperty<Streams::PropId::ZExport>();
+			if (!ZExp) {
+				throw StreamPropertyNotFoundException("FText must be deserialized from ZExport");
 			}
-			if (!Value.GeneratorTypeID.IsNone(*NameMap)) {
+			if (!Value.GeneratorTypeID.IsNone(ZExp->GetNameMap())) {
 				InputStream >> Value.GeneratorContents;
 			}
 

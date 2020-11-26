@@ -152,10 +152,11 @@ namespace Zen::Structs {
 			else {
 				ZeroMask.resize(Helpers::Align<32>(NumBits));
 				auto Data = (uint32_t*)ZeroMask._Myvec.data();
+				int32_t BitsToRead = NumBits;
 				do {
 					InputStream >> *(Data++);
-					NumBits -= 32;
-				} while (NumBits > 0);
+					BitsToRead -= 32;
+				} while (BitsToRead > 0);
 			}
 			ZeroMask.resize(NumBits);
 			ZeroMask.shrink_to_fit();

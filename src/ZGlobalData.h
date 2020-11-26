@@ -53,5 +53,9 @@ namespace Zen {
 			throw Exceptions::ScriptObjectNotFoundException("A matching ScriptObjectEntry was not found for a FPackageObjectIndex (%lld)", Idx.TypeAndId);
 		}
 
+		const std::string& GetEntryName(const FPackageObjectIndex& Idx) const {
+			// GetEntry is always global (in the global utoc), so it's safe to ask the global namemap directly
+			return NameMap.GetName(GetEntry(Idx).ObjectName).Name;
+		}
 	};
 }

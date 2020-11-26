@@ -6,7 +6,7 @@
 #include "Streams/BufferedStream.h"
 #include "Streams/FileStream.h"
 #include "Helpers/Stopwatch.h"
-#include "Exports/UCurveTable.h"
+#include "Exports/UDataTable.h"
 #include "ZGlobalData.h"
 
 #include <chrono>
@@ -41,7 +41,12 @@ namespace Zen {
 			s0.End();
 
 			Helpers::Stopwatch s2("Get package");
-			auto Package = Tree.TryGetPackage("FortniteGame/Content/Athena/Balance/DataTables/AthenaGameData");
+			// TODO: FortniteGame/Content/Athena/Playlists/AthenaCompositeLP CompositeDataTable
+			auto Package = Tree.TryGetPackage("FortniteGame/Content/Items/Datatables/AthenaLootTierData_Client");
+			if (!Package) {
+				printf("doesn't exist\n");
+				return;
+			}
 			s2.End();
 			//Package->GetFile("uasset")->GetStream().Dump("athenadatatable.ucasset");
 
@@ -51,11 +56,11 @@ namespace Zen {
 
 			Helpers::Stopwatch s4("Get exports");
 			auto Export = Package->GetExport(GlobalData, Provider);
-			auto Map = Export.Get<Exports::UCurveTable>();
+			auto Map = Export.Get<Exports::UDataTable>();
 			s4.End();
 			getchar();
 			for (auto& Entry : Map->RowMap) {
-				Entry.first.Get(Export.GetNameMap()).c_str();
+				printf("%s\n", Entry.first.Get(Export.GetNameMap()).c_str());
 			}
 		}
 

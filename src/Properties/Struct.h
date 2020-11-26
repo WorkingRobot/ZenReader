@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Exceptions/BaseException.h"
-#include "../Exports/UObject.h"
+#include "../Structs/FGameplayTagContainer.h"
 #include "../Structs/FLinearColor.h"
 #include "../Structs/FSimpleCurveKey.h"
 #include "../Structs/FRichCurveKey.h"
@@ -24,8 +24,8 @@ namespace Zen::Properties {
 #define CASE(Name, Type) case Helpers::Hash::Crc32(Name): InputStream >> Value.emplace<Type>(); break
 
 				//CASE("LevelSequenceObjectReferenceMap", FLevelSequenceObjectReferenceMap);
-				//CASE("GameplayTagContainer", FGameplayTagContainer);
-				////CASE("GameplayTag", FGameplayTagContainer);
+				CASE("GameplayTagContainer", FGameplayTagContainer);
+				CASE("GameplayTag", FGameplayTagContainer);
 				//CASE("NavAgentSelector", FNavAgentSelectorCustomization);
 				//CASE("Quat", FQuat);
 				//CASE("Vector4", FVector4);
@@ -69,16 +69,18 @@ namespace Zen::Properties {
 
 #undef CASE
 			default:
+			{
 				auto Provider = (const Providers::BaseProvider*)InputStream.GetProperty<Streams::PropId::Provider>();
-				if (Provider) {
-					auto Schema = Provider->GetSchema(PropData.GetStructType());
-					if (Schema) {
-						this->Value.emplace<std::shared_ptr<Exports::UObject>>(std::make_shared<Exports::UObject>(InputStream, *Schema, Exports::StructFallback));
-						break;
-					}
+				if (!Provider) {
+					throw StreamPropertyNotFoundException("StructProperty must be deserialized from ZExport");
+				}
+				auto Schema = Provider->GetSchema(PropData.GetStructType());
+				if (!Schema) {
 					throw SchemaNotFoundException("The schema for struct \"%s\" was not found", PropData.GetStructType().c_str());
 				}
-				throw SchemaNotFoundException("A schema provider was not given");
+				EmplaceUObject(InputStream, *Schema);
+				break;
+			}
 			}
 		}
 
@@ -91,5 +93,9 @@ namespace Zen::Properties {
 		EPropertyType GetType() const override {
 			return EPropertyType::StructProperty;
 		}
+
+	private:
+		// Prevents the #include for the UObject (which in turn includes Lookup.h, creating a cyclic dependency)
+		void EmplaceUObject(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema);
 	};
 }

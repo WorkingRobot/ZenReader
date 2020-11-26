@@ -12,6 +12,10 @@ namespace Zen::Providers {
 			return std::string(c_str(), size());
 		}
 
+		bool operator==(const BaseName& other) const {
+			return compare(c_str(), size());
+		}
+
 		virtual bool compare(const char* Str, size_t StrSize) const = 0;
 		virtual size_t size() const = 0;
 		virtual const char* c_str() const = 0;

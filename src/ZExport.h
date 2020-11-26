@@ -1,22 +1,26 @@
 #pragma once
 
-#include "ZFile.h"
-#include "ZGlobalData.h"
-#include "ZNameMap.h"
+#include "Exceptions/BaseException.h"
 #include "Exports/Serializer.h"
 #include "Providers/Base.h"
 #include "Streams/BufferedStream.h"
 #include "Structs/FPackageSummary.h"
+#include "Structs/FPackageIndex.h"
 #include "Structs/FPackageObjectIndex.h"
 #include "Structs/FExportMapEntry.h"
 #include "Structs/FPackageId.h"
 #include "Structs/FArc.h"
+#include "ZFile.h"
+#include "ZGlobalData.h"
+#include "ZNameMap.h"
 
 #include <any>
 #include <functional>
 
 namespace Zen {
+	using namespace Exceptions;
 	using namespace Structs;
+
 	class ZExport {
 	public:
 		// https://github.com/EpicGames/UnrealEngine/blob/15690f68b984ec2fb9269dd59ff9c3c42b77bd67/Engine/Source/Developer/IoStoreUtilities/Private/IoStoreUtilities.cpp#L929
@@ -69,13 +73,13 @@ namespace Zen {
 
 			Exports.reserve(ExportCount);
 			auto ExportOffset = Summary.GraphDataOffset + Summary.GraphDataSize;
-			PropertyHolder<PropId::NameMap> UAssetNameMap(UAsset, (void*)&NameMap);
+			PropertyHolder<PropId::ZExport> UAssetInternalData(UAsset, (void*)this);
+			PropertyHolder<PropId::GlobalData> UAssetGlobalData(UAsset, (void*)&GlobalData);
 			PropertyHolder<PropId::Provider> UAssetProvider(UAsset, (void*)&SchemaProvider);
 			for (auto& Export : ExportMap) {
 				UAsset.seek(ExportOffset, BaseStream::Beg);
 
-				// GetEntry is always global (in the global utoc), so it's safe to ask the global namemap directly
-				auto& ExportType = GlobalData.NameMap.GetName(GlobalData.GetEntry(Export.ClassIndex).ObjectName).Name;
+				auto& ExportType = GlobalData.GetEntryName(Export.ClassIndex);
 				
 				Exports.emplace_back(Exports::Serialize(UAsset, ExportType));
 
@@ -98,6 +102,27 @@ namespace Zen {
 			return NameMap;
 		}
 
+		const FPackageObjectIndex& GetImport(int i) const {
+			return ImportMap[i];
+		}
+
+		const FExportMapEntry& GetExport(int i) const {
+			return ExportMap[i];
+		}
+
+		const FPackageObjectIndex& GetImport(const FPackageIndex& i) const {
+			if (!i.IsImport()) {
+				throw ArchiveCorruptedException("FPackageIndex must be an import");
+			}
+			return GetImport(i.ToImport());
+		}
+
+		const FExportMapEntry& GetExport(const FPackageIndex& i) const {
+			if (!i.IsExport()) {
+				throw ArchiveCorruptedException("FPackageIndex must be an export");
+			}
+			return GetExport(i.ToExport());
+		}
 
 	private:
 		std::vector<std::any> Exports;

@@ -24,7 +24,7 @@ namespace Zen::Properties {
 			// If a normal (not unversioned) reader, read it a as FName instead
 			auto Provider = (const Providers::BaseProvider*)InputStream.GetProperty<Streams::PropId::Provider>();
 			if (!Provider) {
-				throw EnumNotFoundException("A schema/enum provider was not given");
+				throw StreamPropertyNotFoundException("EnumProperty must be deserialized from ZExport");
 			}
 			auto Enum = Provider->GetEnum(PropData.GetEnumName());
 			if (!Enum) {

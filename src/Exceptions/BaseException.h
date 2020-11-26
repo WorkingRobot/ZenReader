@@ -32,7 +32,7 @@ namespace Zen::Exceptions {
 
 	DEFINE_EXCEPTION(InvalidMagicException);
 	DEFINE_EXCEPTION(InvalidChunkIdException);
-	DEFINE_EXCEPTION(NameMapNotFoundException);
+	DEFINE_EXCEPTION(StreamPropertyNotFoundException);
 	DEFINE_EXCEPTION(SchemaNotFoundException);
 	DEFINE_EXCEPTION(EnumNotFoundException);
 	DEFINE_EXCEPTION(PropertyTypeNotFoundException);
