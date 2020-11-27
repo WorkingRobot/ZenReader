@@ -2,6 +2,8 @@
 
 #include "../Exceptions/BaseException.h"
 #include "../Structs/FGameplayTagContainer.h"
+#include "../Structs/FGuid.h"
+#include "../Structs/FIntPoint.h"
 #include "../Structs/FLinearColor.h"
 #include "../Structs/FSimpleCurveKey.h"
 #include "../Structs/FRichCurveKey.h"
@@ -35,8 +37,8 @@ namespace Zen::Properties {
 				//CASE("Box", FBox);
 				//CASE("Vector", FVector);
 				//CASE("Rotator", FRotator);
-				//CASE("IntPoint", FIntPoint);
-				//CASE("Guid", FGuid);
+				CASE("IntPoint", FIntPoint);
+				CASE("Guid", FGuid);
 				//CASE("SoftObjectPath", FSoftObjectPath);
 				//CASE("SoftClassPath", FSoftObjectPath);
 				//CASE("Color", FColor);

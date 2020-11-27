@@ -6,7 +6,7 @@
 #include "Streams/BufferedStream.h"
 #include "Streams/FileStream.h"
 #include "Helpers/Stopwatch.h"
-#include "Exports/UDataTable.h"
+#include "Exports/UTexture2D.h"
 #include "ZGlobalData.h"
 
 #include <chrono>
@@ -42,7 +42,7 @@ namespace Zen {
 
 			Helpers::Stopwatch s2("Get package");
 			// TODO: FortniteGame/Content/Athena/Playlists/AthenaCompositeLP CompositeDataTable
-			auto Package = Tree.TryGetPackage("FortniteGame/Content/Items/Datatables/AthenaLootTierData_Client");
+			auto Package = Tree.TryGetPackage("FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap");
 			if (!Package) {
 				printf("doesn't exist\n");
 				return;
@@ -56,12 +56,10 @@ namespace Zen {
 
 			Helpers::Stopwatch s4("Get exports");
 			auto Export = Package->GetExport(GlobalData, Provider);
-			auto Map = Export.Get<Exports::UDataTable>();
+			auto Texture = Export.Get<Exports::UTexture2D>();
 			s4.End();
 			getchar();
-			for (auto& Entry : Map->RowMap) {
-				printf("%s\n", Entry.first.Get(Export.GetNameMap()).c_str());
-			}
+			printf("%p\n", Texture);
 		}
 
 		~ZGame()

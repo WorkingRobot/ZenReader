@@ -35,12 +35,14 @@ namespace Zen::Exceptions {
 	DEFINE_EXCEPTION(StreamPropertyNotFoundException);
 	DEFINE_EXCEPTION(SchemaNotFoundException);
 	DEFINE_EXCEPTION(EnumNotFoundException);
+	DEFINE_EXCEPTION(PropertyNotFoundException);
 	DEFINE_EXCEPTION(PropertyTypeNotFoundException);
 	DEFINE_EXCEPTION(ScriptObjectNotFoundException);
 	DEFINE_EXCEPTION(UnsupportedOperationException);
 	DEFINE_EXCEPTION(DecompressionException);
 	DEFINE_EXCEPTION(KeyRequiredException);
 	DEFINE_EXCEPTION(ArchiveCorruptedException);
+	DEFINE_EXCEPTION(BadExportException);
 
 #undef DEFINE_EXCEPTION
 }

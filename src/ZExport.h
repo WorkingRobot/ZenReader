@@ -16,6 +16,7 @@
 
 #include <any>
 #include <functional>
+#include <numeric>
 
 namespace Zen {
 	using namespace Exceptions;
@@ -26,8 +27,13 @@ namespace Zen {
 		// https://github.com/EpicGames/UnrealEngine/blob/15690f68b984ec2fb9269dd59ff9c3c42b77bd67/Engine/Source/Developer/IoStoreUtilities/Private/IoStoreUtilities.cpp#L929
 		ZExport(std::function<const ZFile*(const char*)> GetExtStream, const ZGlobalData& GlobalData, const Providers::BaseProvider& SchemaProvider) {
 			auto UAssetFile = GetExtStream("uasset");
+			auto UBulkFile = GetExtStream("ubulk");
 			if (!UAssetFile) {
-				return;
+				throw BadExportException("A uasset file is required for exporting");
+			}
+			std::optional<ZFileStream> UBulk;
+			if (UBulkFile) {
+				UBulk.emplace(UBulkFile->GetStream());
 			}
 			auto UAsset = UAssetFile->GetStream();
 
@@ -73,6 +79,9 @@ namespace Zen {
 
 			Exports.reserve(ExportCount);
 			auto ExportOffset = Summary.GraphDataOffset + Summary.GraphDataSize;
+			auto BulkOffset = ExportOffset + std::accumulate(ExportMap.begin(), ExportMap.end(), 0ull, [](uint64_t Val, const FExportMapEntry& Export) {
+				return Val + Export.CookedSerialSize;
+			});
 			PropertyHolder<PropId::ZExport> UAssetInternalData(UAsset, (void*)this);
 			PropertyHolder<PropId::GlobalData> UAssetGlobalData(UAsset, (void*)&GlobalData);
 			PropertyHolder<PropId::Provider> UAssetProvider(UAsset, (void*)&SchemaProvider);
@@ -81,7 +90,7 @@ namespace Zen {
 
 				auto& ExportType = GlobalData.GetEntryName(Export.ClassIndex);
 				
-				Exports.emplace_back(Exports::Serialize(UAsset, ExportType));
+				Exports.emplace_back(Exports::Serialize(UAsset, ExportType, UBulk.has_value() ? &*UBulk : nullptr, BulkOffset));
 
 				ExportOffset += Export.CookedSerialSize;
 			}

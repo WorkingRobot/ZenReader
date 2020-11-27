@@ -6,5 +6,5 @@
 #include <string>
 
 namespace Zen::Exports {
-	std::any Serialize(Streams::BaseStream& InputStream, const std::string& ExportType);
+	std::any Serialize(Streams::BaseStream& InputStream, const std::string& ExportType, Streams::BaseStream* BulkStream, size_t BulkOffset);
 }
