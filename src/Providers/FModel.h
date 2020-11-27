@@ -11,6 +11,7 @@
 #include <rapidjson/filereadstream.h>
 #include <deque>
 #include <string>
+#include <memory>
 #include <vector>
 
 namespace Zen::Providers::FModel {
@@ -174,19 +175,19 @@ namespace Zen::Providers::FModel {
 	class Provider : public BaseProvider {
 	public:
 		Provider() {
-			char readBuffer[65536];
+			auto readBuffer = std::make_unique<char[]>(1 << 16);
 			rapidjson::Document TypeMappings;
 			rapidjson::Document EnumMappings;
 #define BASE_PATH "J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/fmodel/"
 			{
 				auto fp = fopen(BASE_PATH "TypeMappings.json", "rb");
-				rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
+				rapidjson::FileReadStream is(fp, readBuffer.get(), 1 << 16);
 				TypeMappings.ParseStream(is);
 				fclose(fp);
 			}
 			{
 				auto fp = fopen(BASE_PATH "EnumMappings.json", "rb");
-				rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
+				rapidjson::FileReadStream is(fp, readBuffer.get(), 1 << 16);
 				EnumMappings.ParseStream(is);
 				fclose(fp);
 			}
