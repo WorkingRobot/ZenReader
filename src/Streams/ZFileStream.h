@@ -128,6 +128,6 @@ namespace Zen::Streams {
     };
 
     // Having a buffered stream instead saves potentially millions of calls to SetFilePointerEx (saves a massive amount of time when exporting many packages)
-    // 4kb default buffer size (BufferedStream's default 256kb isn't efficient for small assets, and the penalty isn't very big for larger assets)
-    using ZFileStream = BufferedStream<ZUnoptimizedFileStream, 1 << 12>;
+    // 64kb default buffer size (BufferedStream's default 256kb isn't efficient for small assets, and the penalty isn't very big for larger assets)
+    using ZFileStream = BufferedStream<ZUnoptimizedFileStream, 1 << 16>;
 }

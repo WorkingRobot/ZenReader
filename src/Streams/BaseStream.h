@@ -201,8 +201,7 @@ namespace Zen::Streams {
             *this >> SerializeNum;
             Val.reserve(SerializeNum);
             for (int i = 0; i < SerializeNum; ++i) {
-                auto& Item = Val.emplace_back();
-                *this >> Item;
+                *this >> Val.emplace_back();
             }
             return *this;
         }
