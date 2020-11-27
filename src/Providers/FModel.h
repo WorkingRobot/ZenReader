@@ -5,6 +5,7 @@
 #endif
 
 #include "Base.h"
+#include "../Exceptions/BaseException.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filereadstream.h>
@@ -13,6 +14,7 @@
 #include <vector>
 
 namespace Zen::Providers::FModel {
+	using namespace Exceptions;
 	class Provider;
 
 	namespace {
@@ -155,7 +157,16 @@ namespace Zen::Providers::FModel {
 			SchemaImpl(std::vector<PropertyImpl>&& Properties) : Properties(std::move(Properties)) {}
 
 			const BaseProperty& operator[](int i) const override {
-				return Properties[i];
+				if (Properties.size() > i && Properties[i].GetSchemaIdx() == i) {
+					return Properties[i];
+				}
+				auto PropItr = std::find_if(Properties.begin(), Properties.end(), [i](const PropertyImpl& Prop) {
+					return Prop.GetSchemaIdx() == i;
+				});
+				if (PropItr != Properties.end()) {
+					return *PropItr;
+				}
+				throw PropertyNotFoundException("Property %d does not exist", i);
 			}
 		};
 	}
