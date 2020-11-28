@@ -6,8 +6,6 @@
 #include "../Streams/BufferStream.h"
 #include "../Streams/FileStream.h"
 
-#include <deque>
-#include <string>
 #include <memory>
 #include <vector>
 
@@ -289,7 +287,6 @@ namespace Zen::Providers::Smart {
 			auto Data = ReadCompressedUsmap(DataSize);
 
 			Streams::BufferStream DataStream(Data.get(), DataSize);
-			//DataStream.Dump("dumpy.udsmap");
 			ParseData(DataStream);
 		}
 
