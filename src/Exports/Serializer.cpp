@@ -33,7 +33,9 @@ namespace Zen::Exports {
 		case Helpers::Hash::Crc32("DataTable"):
 			return std::make_shared<UDataTable>(InputStream, *Schema);
 		case Helpers::Hash::Crc32("FontFace"):
+			throw UnsupportedOperationException("FontFaces aren't parsable yet"); // Not like they have much anyway
 		case Helpers::Hash::Crc32("SoundWave"):
+			throw UnsupportedOperationException("SoundWaves aren't parsable yet");
 		default:
 			return std::make_shared<UObject>(InputStream, *Schema);
 		}

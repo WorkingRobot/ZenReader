@@ -39,8 +39,6 @@ namespace Zen::Providers::FModel {
 		};
 
 		class EnumImpl : public BaseEnum {
-			std::vector<const BaseName*> Names;
-
 		public:
 			EnumImpl(std::vector<const BaseName*>&& Names) : Names(std::move(Names)) {}
 
@@ -50,6 +48,8 @@ namespace Zen::Providers::FModel {
 				}
 				return Names[i];
 			}
+
+			std::vector<const BaseName*> Names;
 		};
 
 		class PropertyDataImpl : public BasePropertyData {
@@ -152,8 +152,6 @@ namespace Zen::Providers::FModel {
 		};
 
 		class SchemaImpl : public BaseSchema {
-			std::vector<PropertyImpl> Properties;
-
 		public:
 			SchemaImpl(std::vector<PropertyImpl>&& Properties) : Properties(std::move(Properties)) {}
 
@@ -169,6 +167,8 @@ namespace Zen::Providers::FModel {
 				}
 				throw PropertyNotFoundException("Property %d does not exist", i);
 			}
+
+			std::vector<PropertyImpl> Properties;
 		};
 	}
 
@@ -226,7 +226,7 @@ namespace Zen::Providers::FModel {
 						break;
 					case EPropertyType::EnumProperty:
 						Prop.Data.Data.Enum.Name = GetOrCreateName(PropVal["enumName"]);
-						Prop.Data.Data.Enum.Type = PropVal.HasMember("enumType") ? GetPropertyType(PropVal["enumType"]) : EPropertyType::Unknown;
+						Prop.Data.Data.Enum.Type = PropVal.HasMember("enumType") ? GetPropertyType(PropVal["enumType"]) : EPropertyType::ByteProperty;
 						break;
 					case EPropertyType::ByteProperty:
 						Prop.Data.Data.Byte.EnumName = PropVal.HasMember("enumName") ? &GetOrCreateName(PropVal["enumName"]) : nullptr;
@@ -270,17 +270,17 @@ namespace Zen::Providers::FModel {
 			return NameLUT.emplace_back(Str, StrSize);
 		}
 
+	public:
 		std::vector<std::pair<const BaseName*, EnumImpl>> Enums;
 		std::vector<std::pair<const BaseName*, SchemaImpl>> Schemas;
 
 		// We use pointers to the values inside, only emplace_back is allowed, don't invalidate anything!
 		std::deque<NameImpl> NameLUT;
 
-	public:
 		const BaseName* GetName(const char* Str, size_t StrSize) const override {
 			auto Itr = std::find_if(NameLUT.begin(), NameLUT.end(), [&](const NameImpl& Name) {
 				return Name.compare(Str, StrSize);
-				});
+			});
 			if (Itr == NameLUT.end()) {
 				return nullptr;
 			}
@@ -290,7 +290,7 @@ namespace Zen::Providers::FModel {
 		const BaseEnum* GetEnum(const BaseName& Str) const override {
 			auto Itr = std::find_if(Enums.begin(), Enums.end(), [&](const std::pair<const BaseName*, EnumImpl>& Enum) {
 				return Enum.first == &Str;
-				});
+			});
 			if (Itr == Enums.end()) {
 				return nullptr;
 			}
@@ -300,7 +300,7 @@ namespace Zen::Providers::FModel {
 		const BaseSchema* GetSchema(const BaseName& Str) const override {
 			auto Itr = std::find_if(Schemas.begin(), Schemas.end(), [&](const std::pair<const BaseName*, SchemaImpl>& Schema) {
 				return Schema.first == &Str;
-				});
+			});
 			if (Itr == Schemas.end()) {
 				return nullptr;
 			}

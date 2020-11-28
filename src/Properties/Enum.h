@@ -13,13 +13,20 @@ namespace Zen::Properties {
 		// https://github.com/EpicGames/UnrealEngine/blob/bf95c2cbc703123e08ab54e3ceccdd47e48d224a/Engine/Source/Runtime/CoreUObject/Private/UObject/PropertySet.cpp#L216
 		EnumProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData) {
 			int EnumIdx;
-			if (PropData.GetEnumType() != EPropertyType::IntProperty) {
+			switch (PropData.GetEnumType())
+			{
+			case EPropertyType::ByteProperty:
+			{
 				uint8_t Val;
 				InputStream >> Val;
 				EnumIdx = Val;
+				break;
 			}
-			else {
+			case EPropertyType::IntProperty:
 				InputStream >> EnumIdx;
+				break;
+			default:
+				throw PropertyTypeNotFoundException("Enum properties only support Byte or Int enum types");
 			}
 			// If a normal (not unversioned) reader, read it a as FName instead
 			auto Provider = (const Providers::BaseProvider*)InputStream.GetProperty<Streams::PropId::Provider>();

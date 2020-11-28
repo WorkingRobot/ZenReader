@@ -2,7 +2,9 @@
 
 #include "ZFileTree.h"
 #include "ZContainer.h"
+#include "Providers/Smart.h"
 #include "Providers/FModel.h"
+#include "Providers/Exporter.h"
 #include "Streams/BufferedStream.h"
 #include "Streams/FileStream.h"
 #include "Helpers/Stopwatch.h"
@@ -42,7 +44,7 @@ namespace Zen {
 
 			Helpers::Stopwatch s2("Get package");
 			// TODO: FortniteGame/Content/Athena/Playlists/AthenaCompositeLP CompositeDataTable
-			auto Package = Tree.TryGetPackage("FortniteGame/Content/Athena/Apollo/Maps/UI/Apollo_Terrain_Minimap");
+			auto Package = Tree.TryGetPackage("FortniteGame/Content/Items/Datatables/AthenaLootTierData_Client");
 			if (!Package) {
 				printf("doesn't exist\n");
 				return;
@@ -51,15 +53,16 @@ namespace Zen {
 			//Package->GetFile("uasset")->GetStream().Dump("athenadatatable.ucasset");
 
 			Helpers::Stopwatch s3("Load provider");
-			Providers::FModelProvider Provider;
+			Providers::SmartProvider Provider;
+			//Providers::Export("J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/smart.usmap", Provider);
 			s3.End();
 
 			Helpers::Stopwatch s4("Get exports");
 			auto Export = Package->GetExport(GlobalData, Provider);
-			auto Texture = Export.Get<Exports::UTexture2D>();
+			//auto Texture = Export.Get<Exports::UTexture2D>();
 			s4.End();
 			getchar();
-			printf("%p\n", Texture);
+			//printf("%p\n", Texture);
 		}
 
 		~ZGame()

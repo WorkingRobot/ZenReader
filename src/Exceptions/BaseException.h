@@ -32,6 +32,7 @@ namespace Zen::Exceptions {
 
 	DEFINE_EXCEPTION(InvalidMagicException);
 	DEFINE_EXCEPTION(InvalidChunkIdException);
+	DEFINE_EXCEPTION(NameNotFoundException);
 	DEFINE_EXCEPTION(StreamPropertyNotFoundException);
 	DEFINE_EXCEPTION(SchemaNotFoundException);
 	DEFINE_EXCEPTION(EnumNotFoundException);
@@ -39,6 +40,7 @@ namespace Zen::Exceptions {
 	DEFINE_EXCEPTION(PropertyTypeNotFoundException);
 	DEFINE_EXCEPTION(ScriptObjectNotFoundException);
 	DEFINE_EXCEPTION(UnsupportedOperationException);
+	DEFINE_EXCEPTION(CompressionException);
 	DEFINE_EXCEPTION(DecompressionException);
 	DEFINE_EXCEPTION(KeyRequiredException);
 	DEFINE_EXCEPTION(ArchiveCorruptedException);

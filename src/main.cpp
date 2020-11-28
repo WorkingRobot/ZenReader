@@ -20,14 +20,16 @@ void operator delete(void* ptr) noexcept
 
 using namespace Zen;
 
+void OodleLog(bool debug, const char* filename, uint32_t line_num, const char* format, ...) {
+	va_list args;
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
+}
+
 int main() {
 	if constexpr (false) {
-		OodleCore_Plugins_SetPrintf([](bool debug, const char* filename, uint32_t line_num, const char* format, ...) {
-			va_list args;
-			va_start(args, format);
-			vprintf(format, args);
-			va_end(args);
-		});
+		OodleCore_Plugins_SetPrintf(OodleLog);
 		Oodle_LogHeader();
 	}
 	else {

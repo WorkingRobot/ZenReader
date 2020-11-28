@@ -92,19 +92,21 @@ extern "C"
 #define OODLELZ_FAILED 0
 #define OODLEAPI __stdcall
 
-	// opts[5]: dictionarySize limit
-	// opts[6]: spaceSpeedTradeoffBytes
-	// opts[12]: jobify
+	// Fortnite's oodle dll (2.5.5) is the same except there's no jobify boolean
 	struct OodleLZ_CompressOptions {
+		OodleLZ_Verbosity verbosity;
 		int minMatchLen;
-		bool makeLongRangeMatcher;
-		int spaceSpeedTradeoffBytes; // [6]
-		int seekChunkLen;
 		bool seekChunkReset;
-		int dictionarySize; // [5]
-		int maxLocalDictionarySize;
-		int matchTableSizeLog2;
+		int seekChunkLen;
+		int _; // this isn't used anywhere???
+		int dictionarySize;
+		int spaceSpeedTradeoffBytes;
+		int maxHuffmansPerChunk;
 		bool sendQuantumCRCs;
+		int maxLocalDictionarySize;
+		bool makeLongRangeMatcher;
+		int matchTableSizeLog2;
+		bool jobify;
 	};
 
 	struct OodleConfigValues {

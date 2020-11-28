@@ -1,9 +1,13 @@
 #pragma once
 
+#include "../Exceptions/BaseException.h"
 #include "../Structs/FName.h"
+#include "../ZExport.h"
 #include "Base.h"
 
 namespace Zen::Properties {
+	using namespace Exceptions;
+
 	class ByteProperty : public BaseProperty {
 	public:
 		uint8_t Value;
@@ -12,7 +16,12 @@ namespace Zen::Properties {
 			if (PropData.GetByteEnumName()) {
 				Structs::FName Name;
 				InputStream >> Name;
-				Value = Name.Index; // not accurate, use the string value
+				
+				auto ZExp = (const ZExport*)InputStream.GetProperty<Streams::PropId::ZExport>();
+				if (!ZExp) {
+					throw StreamPropertyNotFoundException("ByteProperty must be deserialized from ZExport");
+				}
+				Value = atoi(Name.Get(ZExp->GetNameMap()).c_str());
 			}
 			else {
 				// if the FPropertyTag has an EnumName, this is an FName instead

@@ -12,9 +12,7 @@ namespace Zen::Streams {
             BaseStream(FilePath, std::ios::in | std::ios::binary),
             Filename(FilePath.string()),
             FileSize(std::filesystem::file_size(FilePath))
-        {
-            
-        }
+        {}
 
         FileStream(FileStream&&) = default;
         FileStream& operator=(FileStream&&) = default;

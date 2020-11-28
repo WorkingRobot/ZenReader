@@ -32,7 +32,6 @@ namespace Zen::Streams {
 
         // Write ops
 
-        /*
         BaseStream& operator<<(bool Val) {
             write((char*)&Val, sizeof(Val));
             return *this;
@@ -116,7 +115,6 @@ namespace Zen::Streams {
             }
             return *this;
         }
-        */
 
         // Read ops
 
