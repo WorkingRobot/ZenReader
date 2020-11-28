@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef USE_JSON
-#error FModel providers cannot be used without the USE_JSON CMake option
+#error JWP providers cannot be used without the USE_JSON CMake option
 #endif
 
 #include "Base.h"
@@ -10,11 +10,12 @@
 #include <rapidjson/document.h>
 #include <rapidjson/filereadstream.h>
 #include <deque>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace Zen::Providers::FModel {
+namespace Zen::Providers::JWP {
 	using namespace Exceptions;
 	class Provider;
 
@@ -80,7 +81,7 @@ namespace Zen::Providers::FModel {
 				} Map;
 			} Data;
 
-			friend class Zen::Providers::FModel::Provider;
+			friend class Zen::Providers::JWP::Provider;
 
 		public:
 			PropertyDataImpl() : Data{false} {};
@@ -124,7 +125,7 @@ namespace Zen::Providers::FModel {
 			EPropertyType Type;
 			PropertyDataImpl Data;
 
-			friend class Zen::Providers::FModel::Provider;
+			friend class Zen::Providers::JWP::Provider;
 
 		public:
 			PropertyImpl(uint32_t SchemaIdx, const BaseName& Name, EPropertyType Type) :
@@ -175,83 +176,89 @@ namespace Zen::Providers::FModel {
 	class Provider : public BaseProvider {
 	public:
 		Provider() {
-			auto readBuffer = std::make_unique<char[]>(1 << 16);
-			rapidjson::Document TypeMappings;
-			rapidjson::Document EnumMappings;
-#define BASE_PATH "J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/fmodel/"
-			{
-				auto fp = fopen(BASE_PATH "TypeMappings.json", "rb");
-				rapidjson::FileReadStream is(fp, readBuffer.get(), 1 << 16);
-				TypeMappings.ParseStream(is);
+			auto ReadBuffer = std::make_unique<char[]>(1 << 16);
+#define BASE_PATH "J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/jwp/"
+			for (auto& EnumFile : std::filesystem::directory_iterator(BASE_PATH "enums")) {
+				rapidjson::Document EnumDocument;
+				auto fp = fopen(EnumFile.path().string().c_str(), "rb");
+				rapidjson::FileReadStream is(fp, ReadBuffer.get(), 1 << 16);
+				ParseEnum(EnumDocument.ParseStream(is));
 				fclose(fp);
 			}
-			{
-				auto fp = fopen(BASE_PATH "EnumMappings.json", "rb");
-				rapidjson::FileReadStream is(fp, readBuffer.get(), 1 << 16);
-				EnumMappings.ParseStream(is);
+			for (auto& ClassFile : std::filesystem::directory_iterator(BASE_PATH "classes")) {
+				rapidjson::Document SchemaDocument;
+				auto fp = fopen(ClassFile.path().string().c_str(), "rb");
+				rapidjson::FileReadStream is(fp, ReadBuffer.get(), 1 << 16);
+				ParseSchema(SchemaDocument.ParseStream(is));
 				fclose(fp);
 			}
 #undef BASE_PATH
-			ParseDocuments(TypeMappings, EnumMappings);
 		}
 
 	private:
-		void ParseDocuments(const rapidjson::Document& TypeMappings, const rapidjson::Document& EnumMappings) {
-			for (auto EnumItr = EnumMappings.MemberBegin(); EnumItr != EnumMappings.MemberEnd(); ++EnumItr) {
-				std::vector<const BaseName*> EnumNames;
-				EnumNames.reserve(EnumItr->value.MemberCount());
-				for (auto ValueItr = EnumItr->value.MemberBegin(); ValueItr != EnumItr->value.MemberEnd(); ++ValueItr) {
-					EnumNames.emplace_back(&GetOrCreateName(ValueItr->value));
-					// Simple check, atm all enums always start at 0 and increment by 1
-					if ((EnumNames.size() - 1) != atoi(ValueItr->name.GetString())) {
-						printf("%s::%s IS INVALID\nis %zu, should be %d\n", EnumItr->name.GetString(), ValueItr->value.GetString(), EnumNames.size() - 1, atoi(ValueItr->name.GetString()));
-					}
-				}
-				Enums.emplace_back(&GetOrCreateName(EnumItr->name), std::move(EnumNames));
+		void ParseEnum(const rapidjson::Document& EnumDocument) {
+			std::vector<const BaseName*> Names;
+			auto ValuesJson = EnumDocument["values"].GetArray();
+			Names.reserve(ValuesJson.Size());
+			for (auto& Value : ValuesJson) {
+				Names.emplace_back(&GetOrCreateName(Value));
 			}
+			Enums.emplace_back(&GetOrCreateName(EnumDocument["name"]), std::move(Names));
+		}
 
-			for (auto SchemaItr = TypeMappings.MemberBegin(); SchemaItr != TypeMappings.MemberEnd(); ++SchemaItr) {
-				std::vector<PropertyImpl> Props;
-				Props.reserve(SchemaItr->value.MemberCount());
-				for (auto PropItr = SchemaItr->value.MemberBegin(); PropItr != SchemaItr->value.MemberEnd(); ++PropItr) {
-					auto& PropVal = PropItr->value;
-					auto& PropType = PropItr->value["type"];
-					auto EnumType = GetPropertyType(PropType);
-					// assert(TypeEnum != PropertyType::Unknown)
-					auto& Prop = Props.emplace_back(atoi(PropItr->name.GetString()), GetOrCreateName(PropItr->value["name"]), EnumType);
-					switch (EnumType)
-					{
-					case EPropertyType::BoolProperty:
-						Prop.Data.Data.Bool.Bool = PropVal.HasMember("bool") ? PropVal["bool"].GetBool() : false;
-						break;
-					case EPropertyType::EnumProperty:
-						Prop.Data.Data.Enum.Name = GetOrCreateName(PropVal["enumName"]);
-						Prop.Data.Data.Enum.Type = PropVal.HasMember("enumType") ? GetPropertyType(PropVal["enumType"]) : EPropertyType::ByteProperty;
-						break;
-					case EPropertyType::ByteProperty:
-						Prop.Data.Data.Byte.EnumName = PropVal.HasMember("enumName") ? &GetOrCreateName(PropVal["enumName"]) : nullptr;
-						break;
-					case EPropertyType::StructProperty:
-						Prop.Data.Data.Struct.Type = GetOrCreateName(PropVal["structType"]);
-						break;
-					case EPropertyType::SetProperty:
-					case EPropertyType::ArrayProperty:
-						Prop.Data.Data.Array.InnerType = GetPropertyType(PropVal["innerType"]);
-						if (Prop.Data.Data.Array.InnerType == EPropertyType::StructProperty) {
-							Prop.Data.Data.Array.StructType = GetOrCreateName(PropVal["structType"]);
-						}
-						break;
-					case EPropertyType::MapProperty:
-						Prop.Data.Data.Map.KeyType = GetPropertyType(PropVal["innerType"]);
-						Prop.Data.Data.Map.ValueType = GetPropertyType(PropVal["valueType"]);
-						if (Prop.Data.Data.Map.KeyType == EPropertyType::StructProperty || Prop.Data.Data.Map.ValueType == EPropertyType::StructProperty) {
-							Prop.Data.Data.Map.StructType = GetOrCreateName(PropVal["structType"]);
-						}
-						break;
+		void ParseSchema(const rapidjson::Document& SchemaDocument) {
+			std::vector<PropertyImpl> Props;
+			auto PropsJson = SchemaDocument["properties"].GetArray();
+			Props.reserve(PropsJson.Size());
+			for (auto& PropJson : PropsJson) {
+				auto& MappingData = PropJson["mapping_type"];
+
+				// https://github.com/SirWaddles/JohnWickParse/blob/29bd789abaedcbaa7cfbd1752cf99562dac87730/mappings/classes/FortWeaponMeleeItemDefinition.json#L263
+				// Note: Type can be unknown due to "DebugProperty". JWP apparently just throws when it encounters one
+				auto& Prop = Props.emplace_back(PropJson["index"].GetUint(), GetOrCreateName(PropJson["name"]), GetPropertyType(MappingData["type"]));
+
+				switch (Prop.Type)
+				{
+				case EPropertyType::BoolProperty:
+					Prop.Data.Data.Bool.Bool = false;
+					break;
+				case EPropertyType::EnumProperty:
+					Prop.Data.Data.Enum.Name = GetOrCreateName(MappingData["enum_type"]);
+					Prop.Data.Data.Enum.Type = EPropertyType::ByteProperty;
+					break;
+				case EPropertyType::ByteProperty:
+					Prop.Data.Data.Byte.EnumName = nullptr;
+					break;
+				case EPropertyType::StructProperty:
+					Prop.Data.Data.Struct.Type = GetOrCreateName(MappingData["struct_type"]);
+					break;
+				case EPropertyType::SetProperty:
+				case EPropertyType::ArrayProperty:
+				{
+					auto& InnerJson = MappingData["sub_type"];
+					Prop.Data.Data.Array.InnerType = GetPropertyType(InnerJson["type"]);
+					if (Prop.Data.Data.Array.InnerType == EPropertyType::StructProperty) {
+						Prop.Data.Data.Array.StructType = GetOrCreateName(InnerJson["struct_type"]);
 					}
+					break;
 				}
-				Schemas.emplace_back(&GetOrCreateName(SchemaItr->name), std::move(Props));
+				case EPropertyType::MapProperty:
+				{
+					auto& KeyJson = MappingData["key_type"];
+					auto& ValueJson = MappingData["value_type"];
+					Prop.Data.Data.Map.KeyType = GetPropertyType(KeyJson["type"]);
+					Prop.Data.Data.Map.ValueType = GetPropertyType(ValueJson["type"]);
+					if (Prop.Data.Data.Map.KeyType == EPropertyType::StructProperty) {
+						Prop.Data.Data.Map.StructType = GetOrCreateName(KeyJson["struct_type"]);
+					}
+					else if (Prop.Data.Data.Map.ValueType == EPropertyType::StructProperty) {
+						Prop.Data.Data.Map.StructType = GetOrCreateName(ValueJson["struct_type"]);
+					}
+					break;
+				}
+				}
 			}
+			Schemas.emplace_back(&GetOrCreateName(SchemaDocument["name"]), std::move(Props));
 		}
 
 		static constexpr EPropertyType GetPropertyType(const rapidjson::Value& Str) {
@@ -310,5 +317,5 @@ namespace Zen::Providers::FModel {
 }
 
 namespace Zen::Providers {
-	using FModelProvider = FModel::Provider;
+	using JWPProvider = JWP::Provider;
 }

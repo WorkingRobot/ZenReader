@@ -4,6 +4,7 @@
 #include "ZContainer.h"
 #include "Providers/Smart.h"
 #include "Providers/FModel.h"
+#include "Providers/JWP.h"
 #include "Providers/Exporter.h"
 #include "Streams/BufferedStream.h"
 #include "Streams/FileStream.h"
@@ -54,7 +55,7 @@ namespace Zen {
 
 			Helpers::Stopwatch s3("Load provider");
 			Providers::SmartProvider Provider;
-			//Providers::Export("J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/smart.usmap", Provider);
+			//Providers::Export("J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/jwpsmart.usmap", Provider);
 			s3.End();
 
 			Helpers::Stopwatch s4("Get exports");

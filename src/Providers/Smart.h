@@ -292,7 +292,7 @@ namespace Zen::Providers::Smart {
 
 	private:
 		std::unique_ptr<char[]> ReadCompressedUsmap(uint32_t& DecompSize) {
-#define BASE_PATH "J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/smart.usmap"
+#define BASE_PATH "J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/jwpsmart.usmap"
 			Streams::FileStream CompressedInputStream(BASE_PATH);
 #undef BASE_PATH
 
