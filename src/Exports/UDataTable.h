@@ -11,7 +11,7 @@ namespace Zen::Exports {
 
 	class UDataTable : public UObject {
 	public:
-		UDataTable(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema) : UObject(InputStream, Schema) {
+		UDataTable(Streams::BaseStream& InputStream, const Providers::Schema& Schema) : UObject(InputStream, Schema) {
 			auto ZExp = (const ZExport*)InputStream.GetProperty<Streams::PropId::ZExport>();
 			auto GlobalData = (const ZGlobalData*)InputStream.GetProperty<Streams::PropId::GlobalData>();
 			auto Provider = (const Providers::BaseProvider*)InputStream.GetProperty<Streams::PropId::Provider>();

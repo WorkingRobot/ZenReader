@@ -20,7 +20,7 @@ namespace Zen::Properties {
 	public:
 		std::any Value;
 
-		StructProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData) {
+		StructProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
 			switch (Helpers::Hash::Crc32(PropData.GetStructType().c_str(), PropData.GetStructType().size()))
 			{
 #define CASE(Name, Type) case Helpers::Hash::Crc32(Name): InputStream >> Value.emplace<Type>(); break
@@ -86,11 +86,11 @@ namespace Zen::Properties {
 			}
 		}
 
-		StructProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadArray) : StructProperty(InputStream, PropData) {}
+		StructProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadArray) : StructProperty(InputStream, PropData) {}
 
-		StructProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadMap) : StructProperty(InputStream, PropData) {}
+		StructProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadMap) : StructProperty(InputStream, PropData) {}
 
-		StructProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadZero) : Value() {}
+		StructProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadZero) : Value() {}
 
 		EPropertyType GetType() const override {
 			return EPropertyType::StructProperty;
@@ -98,6 +98,6 @@ namespace Zen::Properties {
 
 	private:
 		// Prevents the #include for the UObject (which in turn includes Lookup.h, creating a cyclic dependency)
-		void EmplaceUObject(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema);
+		void EmplaceUObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema);
 	};
 }

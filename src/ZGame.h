@@ -20,7 +20,15 @@ namespace Zen {
 	public:
 		ZGame(const std::filesystem::path& DataFolder)
 		{
-			Helpers::Stopwatch s0("Load utocs");
+			Helpers::Stopwatch s0("Load provider");
+			Providers::SmartProvider Provider("J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/smart.usmap");
+			Providers::Export<true>("J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/smarter.usmap", Provider);
+			std::terminate();
+			//Providers::FModelProvider Provider("J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/fmodel/TypeMappings.json", "J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/fmodel/EnumMappings.json");
+			//Providers::JWPProvider Provider("J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/jwp");
+			s0.End();
+
+			Helpers::Stopwatch s1("Load utocs");
 			for (auto& file : std::filesystem::directory_iterator(DataFolder)) {
 				if (file.path().string().ends_with(".utoc")) {
 					printf("reading %s\n", file.path().string().c_str());
@@ -35,28 +43,23 @@ namespace Zen {
 						Tree
 					);
 					if (file.path().stem() == "global") {
-						Helpers::Stopwatch s1("Load global data");
+						Helpers::Stopwatch s2("Load global data");
 						GlobalData = ZGlobalData(Container);
-						s1.End();
+						s2.End();
 					}
 				}
 			}
-			s0.End();
+			s1.End();
 
-			Helpers::Stopwatch s2("Get package");
+			Helpers::Stopwatch s3("Get package");
 			// TODO: FortniteGame/Content/Athena/Playlists/AthenaCompositeLP CompositeDataTable
 			auto Package = Tree.TryGetPackage("FortniteGame/Content/Items/Datatables/AthenaLootTierData_Client");
 			if (!Package) {
 				printf("doesn't exist\n");
 				return;
 			}
-			s2.End();
-			//Package->GetFile("uasset")->GetStream().Dump("athenadatatable.ucasset");
-
-			Helpers::Stopwatch s3("Load provider");
-			Providers::SmartProvider Provider;
-			//Providers::Export("J:/Code/Visual Studio 2017/Projects/ZenReader/mappings/jwpsmart.usmap", Provider);
 			s3.End();
+			//Package->GetFile("uasset")->GetStream().Dump("athenadatatable.ucasset");
 
 			Helpers::Stopwatch s4("Get exports");
 			auto Export = Package->GetExport(GlobalData, Provider);

@@ -7,7 +7,7 @@
 namespace Zen::Exports {
 	class UCurveTable : public UExport {
 	public:
-		UCurveTable(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema) {
+		UCurveTable(Streams::BaseStream& InputStream, const Providers::Schema& Schema) {
 			InputStream.seek(6, Streams::BaseStream::Cur);
 			// u16: 256, u32: 0
 

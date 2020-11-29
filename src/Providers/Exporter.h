@@ -8,25 +8,25 @@
 #include "../Streams/MemoryStream.h"
 #include "Base.h"
 
+#include <algorithm>
+
 namespace Zen::Providers {
 	using namespace Exceptions;
 
 	namespace {
-		template<typename T>
-		uint16_t GetNameIdx(const BaseName* Val, const T& NameLUT) {
+		uint16_t GetNameIdx(const Name& Val, const std::deque<Name>& NameLUT) {
 			uint16_t i = 0;
 			for (auto& Name : NameLUT) {
-				if (Val == &Name) {
+				if (Val == Name) {
 					return i;
 				}
 				++i;
 			}
-			throw NameNotFoundException("The name \"%s\" could not be found", Val->c_str());
+			throw NameNotFoundException("The name \"%s\" could not be found", Val.c_str());
 		}
 	}
 
-	template<typename T>
-	void Export(const char* OutputFile, const T& Provider) {
+	void Export(const char* OutputFile, const BaseProvider& Provider) {
 		Streams::MemoryStream OutputStream;
 
 		OutputStream << (uint16_t)Provider.NameLUT.size();
@@ -52,7 +52,7 @@ namespace Zen::Providers {
 			OutputStream << (uint8_t)Schema.second.Properties.size();
 			for (auto& Prop : Schema.second.Properties) {
 				OutputStream << Prop.GetSchemaIdx();
-				OutputStream << GetNameIdx(&Prop.GetName(), Provider.NameLUT);
+				OutputStream << GetNameIdx(Prop.GetName(), Provider.NameLUT);
 				OutputStream << (uint8_t)Prop.GetType();
 				auto& Data = Prop.GetData();
 				switch (Prop.GetType())
@@ -61,32 +61,32 @@ namespace Zen::Providers {
 					OutputStream << Data.GetBoolVal();
 					break;
 				case EPropertyType::EnumProperty:
-					OutputStream << GetNameIdx(&Data.GetEnumName(), Provider.NameLUT);
+					OutputStream << GetNameIdx(Data.GetEnumName(), Provider.NameLUT);
 					OutputStream << (uint8_t)Data.GetEnumType();
 					break;
 				case EPropertyType::ByteProperty:
 					if (Data.GetByteEnumName()) {
-						OutputStream << GetNameIdx(Data.GetByteEnumName(), Provider.NameLUT);
+						OutputStream << GetNameIdx(*Data.GetByteEnumName(), Provider.NameLUT);
 					}
 					else {
 						OutputStream << (uint16_t)USHRT_MAX;
 					}
 					break;
 				case EPropertyType::StructProperty:
-					OutputStream << GetNameIdx(&Data.GetStructType(), Provider.NameLUT);
+					OutputStream << GetNameIdx(Data.GetStructType(), Provider.NameLUT);
 					break;
 				case EPropertyType::SetProperty:
 				case EPropertyType::ArrayProperty:
 					OutputStream << (uint8_t)Data.GetArrayInnerType();
 					if (Data.GetArrayInnerType() == EPropertyType::StructProperty) {
-						OutputStream << GetNameIdx(&Data.GetStructType(), Provider.NameLUT);
+						OutputStream << GetNameIdx(Data.GetStructType(), Provider.NameLUT);
 					}
 					break;
 				case EPropertyType::MapProperty:
 					OutputStream << (uint8_t)Data.GetMapKeyType();
 					OutputStream << (uint8_t)Data.GetMapValueType();
 					if (Data.GetMapKeyType() == EPropertyType::StructProperty || Data.GetMapValueType() == EPropertyType::StructProperty) {
-						OutputStream << GetNameIdx(&Data.GetStructType(), Provider.NameLUT);
+						OutputStream << GetNameIdx(Data.GetStructType(), Provider.NameLUT);
 					}
 					break;
 				}

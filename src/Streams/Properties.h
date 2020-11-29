@@ -8,9 +8,6 @@ namespace Zen::Streams {
         ZExport,
         GlobalData,
 
-        SmartProviderNameLUT,
-        SmartProviderPropDataType,
-
         Count
     };
 }

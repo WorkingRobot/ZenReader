@@ -12,7 +12,7 @@ namespace Zen::Exports {
 
 	class UTexture2D : public UObject {
 	public:
-		UTexture2D(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema, Streams::BaseStream* BulkStream, size_t BulkOffset) : UObject(InputStream, Schema) {
+		UTexture2D(Streams::BaseStream& InputStream, const Providers::Schema& Schema, Streams::BaseStream* BulkStream, size_t BulkOffset) : UObject(InputStream, Schema) {
 			auto ZExp = (const ZExport*)InputStream.GetProperty<Streams::PropId::ZExport>();
 			if (!ZExp) {
 				throw StreamPropertyNotFoundException("UDataTable must be deserialized from ZExport");

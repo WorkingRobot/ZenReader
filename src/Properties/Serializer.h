@@ -11,5 +11,5 @@ namespace Zen::Properties {
 	using namespace Enums;
 
 	template<EReadType ReadType>
-	std::unique_ptr<BaseProperty> Serialize(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EPropertyType Type);
+	std::unique_ptr<BaseProperty> Serialize(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EPropertyType Type);
 }

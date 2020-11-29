@@ -7,20 +7,20 @@ namespace Zen::Properties {
 	public:
 		bool Value;
 
-		BoolProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData) {
+		BoolProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
 			// If it's a normal (not unversioned) reader, use BoolVal
 			InputStream >> Value;
 		}
 
-		BoolProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadArray) {
+		BoolProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadArray) {
 			InputStream >> Value;
 		}
 
-		BoolProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadMap) {
+		BoolProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadMap) {
 			InputStream >> Value;
 		}
 
-		BoolProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadZero) : Value(PropData.GetBoolVal()) {}
+		BoolProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadZero) : Value(PropData.GetBoolVal()) {}
 
 		EPropertyType GetType() const override {
 			return EPropertyType::BoolProperty;

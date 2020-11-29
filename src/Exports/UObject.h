@@ -23,11 +23,11 @@ namespace Zen::Exports {
 	public:
 		UObject(UObject&& other) : Props(std::move(other.Props)) {}
 
-		UObject(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema) {
+		UObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema) {
 			Create<false>(InputStream, Schema);
 		}
 
-		UObject(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema, EStructFallback) {
+		UObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema, EStructFallback) {
 			Create<true>(InputStream, Schema);
 		}
 
@@ -61,7 +61,7 @@ namespace Zen::Exports {
 
 	private:
 		template<bool StructFallback>
-		void Create(Streams::BaseStream& InputStream, const Providers::BaseSchema& Schema) {
+		void Create(Streams::BaseStream& InputStream, const Providers::Schema& Schema) {
 			FUnversionedHeader Header;
 			InputStream >> Header;
 

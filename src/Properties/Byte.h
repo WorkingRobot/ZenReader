@@ -12,7 +12,7 @@ namespace Zen::Properties {
 	public:
 		uint8_t Value;
 
-		ByteProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData) {
+		ByteProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
 			if (PropData.GetByteEnumName()) {
 				Structs::FName Name;
 				InputStream >> Name;
@@ -29,17 +29,17 @@ namespace Zen::Properties {
 			}
 		}
 
-		ByteProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadArray) {
+		ByteProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadArray) {
 			InputStream >> Value;
 		}
 
-		ByteProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadMap) {
+		ByteProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadMap) {
 			uint32_t Val;
 			InputStream >> Val;
 			Value = Val;
 		}
 
-		ByteProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadZero) : Value(0) {}
+		ByteProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadZero) : Value(0) {}
 
 		EPropertyType GetType() const override {
 			return EPropertyType::ByteProperty;

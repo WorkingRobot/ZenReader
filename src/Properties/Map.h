@@ -8,7 +8,7 @@ namespace Zen::Properties {
 	public:
 		std::vector<std::pair<std::unique_ptr<BaseProperty>, std::unique_ptr<BaseProperty>>> Value;
 
-		MapProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData) {
+		MapProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
 			int NumKeysToRemove;
 			InputStream >> NumKeysToRemove;
 			for (int i = 0; i < NumKeysToRemove; ++i) {
@@ -23,11 +23,11 @@ namespace Zen::Properties {
 			}
 		}
 
-		MapProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadArray) : MapProperty(InputStream, PropData) {}
+		MapProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadArray) : MapProperty(InputStream, PropData) {}
 
-		MapProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadMap) : MapProperty(InputStream, PropData) {}
+		MapProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadMap) : MapProperty(InputStream, PropData) {}
 
-		MapProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadZero) : Value() {}
+		MapProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadZero) : Value() {}
 
 		EPropertyType GetType() const override {
 			return EPropertyType::MapProperty;

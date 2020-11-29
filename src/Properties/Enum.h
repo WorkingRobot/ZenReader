@@ -11,7 +11,7 @@ namespace Zen::Properties {
 		std::string Value;
 
 		// https://github.com/EpicGames/UnrealEngine/blob/bf95c2cbc703123e08ab54e3ceccdd47e48d224a/Engine/Source/Runtime/CoreUObject/Private/UObject/PropertySet.cpp#L216
-		EnumProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData) {
+		EnumProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
 			int EnumIdx;
 			switch (PropData.GetEnumType())
 			{
@@ -46,11 +46,11 @@ namespace Zen::Properties {
 			}
 		}
 
-		EnumProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadArray) : EnumProperty(InputStream, PropData) {}
+		EnumProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadArray) : EnumProperty(InputStream, PropData) {}
 
-		EnumProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadMap) : EnumProperty(InputStream, PropData) {}
+		EnumProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadMap) : EnumProperty(InputStream, PropData) {}
 
-		EnumProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadZero) : Value() {}
+		EnumProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadZero) : Value() {}
 
 		EPropertyType GetType() const override {
 			return EPropertyType::EnumProperty;

@@ -12,6 +12,8 @@ namespace Zen {
 	struct StrlenKey {
 		typedef SizeType KeySize;
 
+		StrlenKey(std::unique_ptr<char[]>&& Data) : Data(std::move(Data)) {}
+
 		// Using initializers here forces the optimization to not create an empty unique ptr first
 		StrlenKey(const char* String, KeySize Size) : Data(new char[Size + 1])
 		{
@@ -36,6 +38,8 @@ namespace Zen {
 	template<typename SizeType>
 	struct PrefixedKey {
 		typedef SizeType KeySize;
+
+		PrefixedKey(std::unique_ptr<char[]>&& Data) : Data(std::move(Data)) {}
 
 		PrefixedKey(const char* String, KeySize Size) : Data(new char[sizeof(KeySize) + Size])
 		{

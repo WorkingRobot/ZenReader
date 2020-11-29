@@ -8,7 +8,7 @@ namespace Zen::Properties {
 	public:
 		std::vector<std::unique_ptr<BaseProperty>> Value;
 
-		ArrayProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData) {
+		ArrayProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
 			int SerializeNum;
 			InputStream >> SerializeNum;
 			Value.reserve(SerializeNum);
@@ -21,11 +21,11 @@ namespace Zen::Properties {
 			}
 		}
 
-		ArrayProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadArray) : ArrayProperty(InputStream, PropData) {}
+		ArrayProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadArray) : ArrayProperty(InputStream, PropData) {}
 
-		ArrayProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadMap) : ArrayProperty(InputStream, PropData) {}
+		ArrayProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadMap) : ArrayProperty(InputStream, PropData) {}
 
-		ArrayProperty(Streams::BaseStream& InputStream, const Providers::BasePropertyData& PropData, EReadZero) : Value() {}
+		ArrayProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadZero) : Value() {}
 
 		EPropertyType GetType() const override {
 			return EPropertyType::ArrayProperty;
