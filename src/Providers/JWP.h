@@ -40,7 +40,7 @@ namespace Zen::Providers::JWP {
 
 	private:
 		void ParseEnum(const rapidjson::Document& EnumDocument) {
-			std::vector<std::reference_wrapper<const Name>> Names;
+			std::vector<std::reference_wrapper<const NameEntry>> Names;
 			auto ValuesJson = EnumDocument["values"].GetArray();
 			Names.reserve(ValuesJson.Size());
 			for (auto& Value : ValuesJson) {
@@ -58,10 +58,7 @@ namespace Zen::Providers::JWP {
 
 				// https://github.com/SirWaddles/JohnWickParse/blob/29bd789abaedcbaa7cfbd1752cf99562dac87730/mappings/classes/FortWeaponMeleeItemDefinition.json#L263
 				// Note: Type can be unknown due to "DebugProperty". JWP apparently just throws when it encounters one
-				auto& Prop = Props.emplace_back();
-				Prop.NameVal = &GetOrCreateName(PropJson["name"]);
-				Prop.SchemaIdx = PropJson["index"].GetUint();
-				Prop.Type = GetPropertyType(MappingData["type"]);
+				auto& Prop = Props.emplace_back(GetOrCreateName(PropJson["name"]), PropJson["index"].GetUint(), GetPropertyType(MappingData["type"]));
 
 				auto& PropData = Prop.GetEditableData();
 				switch (Prop.Type)
@@ -112,7 +109,7 @@ namespace Zen::Providers::JWP {
 			return BaseProvider::GetPropertyType(Str.GetString(), Str.GetStringLength());
 		}
 
-		const Name& GetOrCreateName(const rapidjson::Value& Str) {
+		const NameEntry& GetOrCreateName(const rapidjson::Value& Str) {
 			return BaseProvider::GetOrCreateName(Str.GetString(), Str.GetStringLength());
 		}
 	};

@@ -35,7 +35,7 @@ namespace Zen::Providers::FModel {
 	private:
 		void ParseDocuments(const rapidjson::Document& TypeMappings, const rapidjson::Document& EnumMappings) {
 			for (auto EnumItr = EnumMappings.MemberBegin(); EnumItr != EnumMappings.MemberEnd(); ++EnumItr) {
-				std::vector<std::reference_wrapper<const Name>> EnumNames;
+				std::vector<std::reference_wrapper<const NameEntry>> EnumNames;
 				EnumNames.reserve(EnumItr->value.MemberCount());
 				for (auto ValueItr = EnumItr->value.MemberBegin(); ValueItr != EnumItr->value.MemberEnd(); ++ValueItr) {
 					EnumNames.emplace_back(GetOrCreateName(ValueItr->value));
@@ -54,10 +54,7 @@ namespace Zen::Providers::FModel {
 				for (auto PropItr = SchemaItr->value.MemberBegin(); PropItr != SchemaItr->value.MemberEnd(); ++PropItr) {
 					auto& PropVal = PropItr->value;
 
-					auto& Prop = Props.emplace_back();
-					Prop.NameVal = &GetOrCreateName(PropItr->value["name"]);
-					Prop.SchemaIdx = atoi(PropItr->name.GetString());
-					Prop.Type = GetPropertyType(PropItr->value["type"]);
+					auto& Prop = Props.emplace_back(GetOrCreateName(PropItr->value["name"]), atoi(PropItr->name.GetString()), GetPropertyType(PropItr->value["type"]));
 
 					auto& PropData = Prop.GetEditableData();
 					switch (Prop.Type)
@@ -100,7 +97,7 @@ namespace Zen::Providers::FModel {
 			return BaseProvider::GetPropertyType(Str.GetString(), Str.GetStringLength());
 		}
 
-		const Name& GetOrCreateName(const rapidjson::Value& Str) {
+		const NameEntry& GetOrCreateName(const rapidjson::Value& Str) {
 			return BaseProvider::GetOrCreateName(Str.GetString(), Str.GetStringLength());
 		}
 	};

@@ -68,7 +68,7 @@ namespace Zen::Providers::Smart {
 					uint16_t Idx;
 					InputStream >> Idx;
 
-					std::vector<std::reference_wrapper<const Name>> EnumNames;
+					std::vector<std::reference_wrapper<const NameEntry>> EnumNames;
 					uint8_t EnumNamesSize;
 					InputStream >> EnumNamesSize;
 					EnumNames.reserve(EnumNamesSize);
@@ -95,14 +95,13 @@ namespace Zen::Providers::Smart {
 					InputStream >> PropsSize;
 					Props.reserve(PropsSize);
 					for (uint8_t i = 0; i < PropsSize; ++i) {
-						auto& Prop = Props.emplace_back();
+						uint16_t SchemaIdx;
 						uint16_t Idx;
 						uint8_t Type;
-						InputStream >> Prop.SchemaIdx;
+						InputStream >> SchemaIdx;
 						InputStream >> Idx;
 						InputStream >> Type;
-						Prop.NameVal = &NameLUT[Idx];
-						Prop.Type = (EPropertyType)Type;
+						auto& Prop = Props.emplace_back(NameLUT[Idx], SchemaIdx, (EPropertyType)Type);
 
 						auto& PropData = Prop.GetEditableData();
 						switch (Prop.Type)

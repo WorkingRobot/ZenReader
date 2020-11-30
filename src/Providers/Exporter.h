@@ -14,7 +14,7 @@ namespace Zen::Providers {
 	using namespace Exceptions;
 
 	namespace {
-		uint16_t GetNameIdx(const Name& Val, const std::deque<Name>& NameLUT) {
+		uint16_t GetNameIdx(const NameEntry& Val, const std::deque<NameEntry>& NameLUT) {
 			uint16_t i = 0;
 			for (auto& Name : NameLUT) {
 				if (Val == Name) {
@@ -37,20 +37,20 @@ namespace Zen::Providers {
 
 		OutputStream << (uint16_t)Provider.Enums.size();
 		for (auto& Enum : Provider.Enums) {
-			OutputStream << GetNameIdx(Enum.first, Provider.NameLUT);
+			OutputStream << GetNameIdx(Enum.Name, Provider.NameLUT);
 
-			OutputStream << (uint8_t)Enum.second.Names.size();
-			for (auto& Name : Enum.second.Names) {
+			OutputStream << (uint8_t)Enum.Names.size();
+			for (auto& Name : Enum.Names) {
 				OutputStream << GetNameIdx(Name, Provider.NameLUT);
 			}
 		}
 
 		OutputStream << (uint16_t)Provider.Schemas.size();
 		for (auto& Schema : Provider.Schemas) {
-			OutputStream << GetNameIdx(Schema.first, Provider.NameLUT);
+			OutputStream << GetNameIdx(Schema.Name, Provider.NameLUT);
 
-			OutputStream << (uint8_t)Schema.second.Properties.size();
-			for (auto& Prop : Schema.second.Properties) {
+			OutputStream << (uint8_t)Schema.Properties.size();
+			for (auto& Prop : Schema.Properties) {
 				OutputStream << Prop.GetSchemaIdx();
 				OutputStream << GetNameIdx(Prop.GetName(), Provider.NameLUT);
 				OutputStream << (uint8_t)Prop.GetType();

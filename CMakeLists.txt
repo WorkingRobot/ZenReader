@@ -4,8 +4,7 @@ project(ZenReader)
 
 ## Options ##
 
-option(ENABLE_TRACY "Adds tracy profiler (MSVC compiler and initialized git submodule is required)" OFF)
-option(USE_JSON "Requires rapidjson, allows the use of FModel's and JohnWickParse's mappings" OFF)
+option(USE_JSON "Requires RapidJSON, allows the use of FModel's and JohnWickParse's mappings" OFF)
 
 
 ## Use /MT instead of /MD ##
@@ -47,7 +46,6 @@ link_libraries(
 )
 
 if (USE_JSON)
-    message("USING JSON")
     add_compile_definitions(USE_JSON)
     find_package(RapidJSON CONFIG REQUIRED)
     include_directories(${RAPIDJSON_INCLUDE_DIRS})
@@ -86,19 +84,9 @@ endfunction()
 add_dir_recursive(ZenReader src)
 
 
-## Tracy option handling ##
-
-if(ENABLE_TRACY AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    message("Tracy profiling is enabled")
-    list(APPEND ZenReader_SOURCES "tracy/TracyClient.cpp")
-    include_directories(tracy)
-    add_definitions(-DTRACY_ENABLE -DTRACY_NO_EXIT)
-endif()
-
-
 ## Define target ##
 
-add_executable(ZenReader ${ZenReader_SOURCES} "src/Exports/UObject.h")
+add_library(ZenReader ${ZenReader_SOURCES})
 
 
 ## Properties ##

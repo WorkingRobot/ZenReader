@@ -12,10 +12,6 @@ namespace Zen {
 
 	class ZGlobalData {
 	public:
-		ZNameMap NameMap;
-		// maybe make this some other type to be faster?
-		std::vector<FScriptObjectEntry> ScriptObjectEntries;
-
 		ZGlobalData() = default;
 
 		// TODO: https://github.com/EpicGames/UnrealEngine/blob/5c904997491e4f504c4cd3d7548540685016fbf9/Engine/Source/Runtime/CoreUObject/Private/Serialization/AsyncLoading2.cpp#L858
@@ -57,5 +53,10 @@ namespace Zen {
 			// GetEntry is always global (in the global utoc), so it's safe to ask the global namemap directly
 			return NameMap.GetName(GetEntry(Idx).ObjectName).Name;
 		}
+
+	private:
+		ZNameMap NameMap;
+		// maybe make this some other type to be faster?
+		std::vector<FScriptObjectEntry> ScriptObjectEntries;
 	};
 }

@@ -18,9 +18,7 @@ namespace Zen {
 		BaseContainer(BaseStream& Toc, BaseStream& Cas) :
 			TocStream(Toc),
 			CasStream(Cas)
-		{
-
-		}
+		{}
 
 		BaseStream& TocStream;
 		BaseStream& CasStream;
@@ -33,7 +31,7 @@ namespace Zen {
 	public:
 		// KeyDelegate is of type bool(const FGuid&, FAESKey&)
 		template<typename KeyDelegateCall, typename FileTree>
-		ZContainer(TocStreamType&& _TocStream, CasStreamType&& _CasStream, KeyDelegateCall KeyDelegate, FileTree& Tree) :
+		ZContainer(TocStreamType&& _TocStream, CasStreamType&& _CasStream, const KeyDelegateCall& KeyDelegate, FileTree& Tree) :
 			BaseContainer(TocStreamHolder, CasStreamHolder),
 			TocStreamHolder(std::forward<TocStreamType>(_TocStream)),
 			CasStreamHolder(std::forward<CasStreamType>(_CasStream))

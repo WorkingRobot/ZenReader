@@ -13,18 +13,18 @@ namespace Zen::Providers {
 	using namespace Exceptions;
 	using namespace Enums;
 
-	class Name {
+	class NameEntry {
 		StrlenKey<uint8_t> Key;
 
 	public:
 		template<typename... Args>
-		Name(Args&&... KeyArgs) : Key(std::forward<Args>(KeyArgs)...) {}
+		NameEntry(Args&&... KeyArgs) : Key(std::forward<Args>(KeyArgs)...) {}
 
 		std::string string() const {
 			return std::string(c_str(), size());
 		}
 
-		bool operator==(const Name& other) const {
+		bool operator==(const NameEntry& other) const {
 			return !strcmp(c_str(), other.c_str());
 		}
 
@@ -43,11 +43,15 @@ namespace Zen::Providers {
 
 	class Enum {
 	public:
-		std::vector<std::reference_wrapper<const Name>> Names;
+		std::vector<std::reference_wrapper<const NameEntry>> Names;
+		const NameEntry& Name;
 
-		Enum(std::vector<std::reference_wrapper<const Name>>&& Names) : Names(std::move(Names)) {}
+		Enum(const NameEntry& Name, std::vector<std::reference_wrapper<const NameEntry>>&& Names) :
+			Name(Name),
+			Names(std::move(Names))
+		{}
 
-		const Name* operator[](int i) const {
+		const NameEntry* operator[](int i) const {
 			if (i >= Names.size()) {
 				return nullptr;
 			}
@@ -61,23 +65,23 @@ namespace Zen::Providers {
 				bool Bool;
 			} Bool;
 			struct {
-				std::reference_wrapper<const Name> Name;
+				std::reference_wrapper<const NameEntry> Name;
 				EPropertyType Type;
 			} Enum;
 			struct {
-				const Name* EnumName;
+				const NameEntry* EnumName;
 			} Byte;
 			struct {
-				std::reference_wrapper<const Name> Type;
+				std::reference_wrapper<const NameEntry> Type;
 			} Struct;
 			struct {
 				// UB if not set
-				std::reference_wrapper<const Name> StructType;
+				std::reference_wrapper<const NameEntry> StructType;
 				EPropertyType InnerType;
 			} Array;
 			struct {
 				// UB if not set
-				std::reference_wrapper<const Name> StructType;
+				std::reference_wrapper<const NameEntry> StructType;
 				EPropertyType KeyType;
 				EPropertyType ValueType;
 			} Map;
@@ -94,7 +98,7 @@ namespace Zen::Providers {
 			return Data.Bool.Bool;
 		}
 
-		const Name& GetEnumName() const {
+		const NameEntry& GetEnumName() const {
 			return Data.Enum.Name;
 		}
 
@@ -102,12 +106,12 @@ namespace Zen::Providers {
 			return Data.Enum.Type;
 		}
 
-		const Name* GetByteEnumName() const {
+		const NameEntry* GetByteEnumName() const {
 			return Data.Byte.EnumName;
 		}
 
 		// Note: This will need to be valid in Array and Map properties
-		const Name& GetStructType() const {
+		const NameEntry& GetStructType() const {
 			return Data.Struct.Type;
 		}
 
@@ -126,13 +130,19 @@ namespace Zen::Providers {
 
 	class Property {
 	public:
-		const Name* NameVal; // Pointer to let it be default constructible
+		const NameEntry& Name;
 		uint16_t SchemaIdx;
 		EPropertyType Type;
 		PropertyData Data;
 
-		const Name& GetName() const {
-			return *NameVal;
+		Property(const NameEntry& Name, uint16_t SchemaIdx, EPropertyType Type) :
+			Name(Name),
+			SchemaIdx(SchemaIdx),
+			Type(Type)
+		{}
+
+		const NameEntry& GetName() const {
+			return Name;
 		}
 
 		EPropertyType GetType() const {
@@ -155,8 +165,12 @@ namespace Zen::Providers {
 	class Schema {
 	public:
 		std::vector<Property> Properties;
+		const NameEntry& Name;
 
-		Schema(std::vector<Property>&& Properties) : Properties(std::move(Properties)) {}
+		Schema(const NameEntry& Name, std::vector<Property>&& Properties) :
+			Name(Name),
+			Properties(std::move(Properties))
+		{}
 
 		const Property& operator[](int i) const {
 			if (Properties.size() > i && Properties[i].GetSchemaIdx() == i) {
@@ -178,7 +192,7 @@ namespace Zen::Providers {
 		BaseProvider() = default;
 
 	public:
-		const Name* GetName(const std::string& Name) const {
+		const NameEntry* GetName(const std::string& Name) const {
 			return GetName(Name.c_str(), Name.size());
 		}
 
@@ -198,8 +212,8 @@ namespace Zen::Providers {
 			return nullptr;
 		}
 
-		const Name* GetName(const char* Str, size_t StrSize) const {
-			auto Itr = std::find_if(NameLUT.begin(), NameLUT.end(), [&](const Name& Name) {
+		const NameEntry* GetName(const char* Str, size_t StrSize) const {
+			auto Itr = std::find_if(NameLUT.begin(), NameLUT.end(), [&](const NameEntry& Name) {
 				return Name.compare(Str, StrSize);
 				});
 			if (Itr == NameLUT.end()) {
@@ -208,34 +222,34 @@ namespace Zen::Providers {
 			return &*Itr;
 		}
 
-		const Enum* GetEnum(const Name& Str) const {
-			auto Itr = std::find_if(Enums.begin(), Enums.end(), [&](const std::pair<const Name&, Enum>& Enum) {
-				return Enum.first == Str;
+		const Enum* GetEnum(const NameEntry& Str) const {
+			auto Itr = std::find_if(Enums.begin(), Enums.end(), [&](const Enum& Enum) {
+				return Enum.Name == Str;
 			});
 			if (Itr == Enums.end()) {
 				return nullptr;
 			}
-			return &Itr->second;
+			return &*Itr;
 		}
 
-		const Schema* GetSchema(const Name& Str) const {
-			auto Itr = std::find_if(Schemas.begin(), Schemas.end(), [&](const std::pair<const Name&, Schema>& Schema) {
-				return Schema.first == Str;
+		const Schema* GetSchema(const NameEntry& Str) const {
+			auto Itr = std::find_if(Schemas.begin(), Schemas.end(), [&](const Schema& Schema) {
+				return Schema.Name == Str;
 			});
 			if (Itr == Schemas.end()) {
 				return nullptr;
 			}
-			return &Itr->second;
+			return &*Itr;
 		}
 
-		std::vector<std::pair<std::reference_wrapper<const Name>, Enum>> Enums;
-		std::vector<std::pair<std::reference_wrapper<const Name>, Schema>> Schemas;
+		std::vector<Enum> Enums;
+		std::vector<Schema> Schemas;
 
 		// We use references to the values inside, don't cause any reallocations after the constructor!
-		std::deque<Name> NameLUT;
+		std::deque<NameEntry> NameLUT;
 
 	protected:
-		const Name& GetOrCreateName(const char* Str, size_t StrSize) {
+		const NameEntry& GetOrCreateName(const char* Str, size_t StrSize) {
 			auto Name = GetName(Str, StrSize);
 			if (Name) {
 				return *Name;

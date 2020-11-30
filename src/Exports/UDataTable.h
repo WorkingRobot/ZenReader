@@ -3,8 +3,8 @@
 #include "../Exceptions/BaseException.h"
 #include "../Enums/ECurveTableMode.h"
 #include "../Structs/FName.h"
-#include "UObject.h"
 #include "../ZExport.h"
+#include "UObject.h"
 
 namespace Zen::Exports {
 	using namespace Exceptions;

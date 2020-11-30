@@ -64,4 +64,42 @@ namespace Zen::Properties {
 	CASE(EnumProperty);
 
 #undef CASE
+
+	static constexpr const char* GetString(EPropertyType Type) {
+		switch (Type)
+		{
+#define CASE(Type) case EPropertyType::Type: return #Type;
+		
+			CASE(ByteProperty);
+			CASE(BoolProperty);
+			CASE(IntProperty);
+			CASE(FloatProperty);
+			CASE(ObjectProperty);
+			CASE(NameProperty);
+			CASE(DelegateProperty);
+			CASE(DoubleProperty);
+			CASE(ArrayProperty);
+			CASE(StructProperty);
+			CASE(StrProperty);
+			CASE(TextProperty);
+			CASE(InterfaceProperty);
+			//CASE(MulticastDelegateProperty);
+			//CASE(LazyObjectProperty);
+			CASE(SoftObjectProperty);
+			CASE(AssetObjectProperty);
+			CASE(UInt64Property);
+			CASE(UInt32Property);
+			CASE(UInt16Property);
+			CASE(Int64Property);
+			CASE(Int16Property);
+			CASE(Int8Property);
+			CASE(MapProperty);
+			CASE(SetProperty);
+			CASE(EnumProperty);
+
+#undef CASE
+		default:
+			return "Unknown";
+		}
+	}
 }

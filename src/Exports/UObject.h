@@ -6,7 +6,6 @@
 #include "../Providers/Base.h"
 #include "../Properties/Lookup.h"
 #include "../Properties/Serializer.h"
-#include "../ZSmallMap.h"
 #include "UExport.h"
 
 namespace Zen::Exports {
@@ -20,43 +19,83 @@ namespace Zen::Exports {
 	inline constexpr EStructFallback StructFallback{};
 
 	class UObject : public UExport {
-	public:
-		UObject(UObject&& other) : Props(std::move(other.Props)) {}
+	protected:
+		const Providers::Schema& Schema;
+		std::vector<std::pair<std::reference_wrapper<const Providers::Property>, std::unique_ptr<Properties::BaseProperty>>> Properties;
 
-		UObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema) {
+	public:
+		UObject(UObject&& other) : Schema(other.Schema), Properties(std::move(other.Properties)) {}
+
+		UObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema) : Schema(Schema) {
 			Create<false>(InputStream, Schema);
 		}
 
-		UObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema, EStructFallback) {
+		UObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema, EStructFallback) : Schema(Schema) {
 			Create<true>(InputStream, Schema);
+		}
+
+		const Providers::Schema& GetSchema() const {
+			return Schema;
+		}
+
+		const decltype(UObject::Properties)& GetProperties() const {
+			return Properties;
+		}
+
+		template<typename T>
+		const T* TryGet(const Providers::Property& Prop) const {
+			return TryGet<T>(Prop.GetSchemaIdx());
 		}
 
 		template<typename T, typename NameType>
 		const T* TryGet(const NameType& Name) const {
-			auto Itr = Props.SearchValues(Name.c_str(), Name.size());
-			if (Itr == Props.end()) {
-				return nullptr;
-			}
-			if constexpr (!std::is_same<T, Properties::BaseProperty>::value) {
-				if (Properties::GetType<T>() != Itr->second->GetType()) {
-					return nullptr;
+			constexpr bool IsBase = std::is_same<T, Properties::BaseProperty>::value;
+
+			for (auto& Prop : Properties) {
+				if (Prop.first.get().GetName().compare(Name.c_str(), Name.size())) {
+					if constexpr (!IsBase) {
+						if (Properties::GetType<T>() != Prop.second->GetType()) {
+							continue;
+						}
+					}
+					return (const T*)Prop.second.get();
 				}
 			}
-			return Itr->second.get();
+			return nullptr;
 		}
 
 		template<typename T, size_t Size>
 		const T* TryGet(const char(&Name)[Size]) const {
-			auto Itr = Props.SearchValues(Name, Size - 1);
-			if (Itr == Props.end()) {
-				return nullptr;
-			}
-			if constexpr (!std::is_same<T, Properties::BaseProperty>::value) {
-				if (Properties::GetType<T>() != Itr->second->GetType()) {
-					return nullptr;
+			constexpr bool IsBase = std::is_same<T, Properties::BaseProperty>::value;
+
+			for (auto& Prop : Properties) {
+				if (Prop.first.get().GetName().compare(Name, Size - 1)) {
+					if constexpr (!IsBase) {
+						if (Properties::GetType<T>() != Prop.second->GetType()) {
+							continue;
+						}
+					}
+					return (const T*)Prop.second.get();
 				}
 			}
-			return (T*)Itr->second.get();
+			return nullptr;
+		}
+
+		template<typename T>
+		const T* TryGet(uint16_t SchemaIdx) const {
+			constexpr bool IsBase = std::is_same<T, Properties::BaseProperty>::value;
+
+			for (auto& Prop : Properties) {
+				if (Prop.first.get().GetSchemaIdx() == SchemaIdx) {
+					if constexpr (!IsBase) {
+						if (Properties::GetType<T>() != Prop.second->GetType()) {
+							break;
+						}
+					}
+					return (const T*)Prop.second.get();
+				}
+			}
+			return nullptr;
 		}
 
 	private:
@@ -72,7 +111,7 @@ namespace Zen::Exports {
 						continue;
 					}
 					auto& Prop = Schema[Itr.GetSchemaItr()];
-					Props.emplace_back(Prop.GetName().c_str(), Prop.GetName().size(), Properties::Serialize<Properties::EReadType::NORMAL>(InputStream, Prop.GetData(), Prop.GetType()));
+					Properties.emplace_back(Prop, Properties::Serialize<Properties::EReadType::NORMAL>(InputStream, Prop.GetData(), Prop.GetType()));
 				} while (++Itr);
 			}
 
@@ -85,8 +124,5 @@ namespace Zen::Exports {
 				}
 			}
 		}
-
-	protected:
-		ZSmallMap<StrlenKey<uint8_t>, std::unique_ptr<Properties::BaseProperty>> Props;
 	};
 }
