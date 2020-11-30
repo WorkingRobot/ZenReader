@@ -7,51 +7,6 @@ project(ZenReader)
 option(USE_JSON "Requires RapidJSON, allows the use of FModel's and JohnWickParse's mappings" OFF)
 
 
-## Use /MT instead of /MD ##
-
-set(CompilerFlags
-        CMAKE_CXX_FLAGS
-        CMAKE_CXX_FLAGS_DEBUG
-        CMAKE_CXX_FLAGS_RELWITHDEBINFO
-        CMAKE_CXX_FLAGS_MINSIZEREL
-        CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_C_FLAGS
-        CMAKE_C_FLAGS_DEBUG
-        CMAKE_C_FLAGS_RELWITHDEBINFO
-        CMAKE_C_FLAGS_MINSIZEREL
-        CMAKE_C_FLAGS_RELEASE
-        )
-foreach(CompilerFlag ${CompilerFlags})
-    string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-endforeach()
-
-
-## Force MSVC to have conformance with other compilers ##
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    add_compile_options("/permissive-")
-
-
-## Give non MSVC compilers some intrinsics (AES is required) ##
-
-else()
-    add_compile_options("-march=native")
-endif()
-
-
-## Dependencies ##
-
-link_libraries(
-    "${CMAKE_CURRENT_SOURCE_DIR}\\src\\Helpers\\oo2core_8_win64.lib"
-)
-
-if (USE_JSON)
-    add_compile_definitions(USE_JSON)
-    find_package(RapidJSON CONFIG REQUIRED)
-    include_directories(${RAPIDJSON_INCLUDE_DIRS})
-endif()
-
-
 ## Source Files ##
 
 function(ADD_DIR PROJECT TARGET_DIR)
@@ -86,7 +41,56 @@ add_dir_recursive(ZenReader src)
 
 ## Define target ##
 
-add_library(ZenReader ${ZenReader_SOURCES})
+add_library(ZenReader STATIC ${ZenReader_SOURCES})
+target_include_directories(ZenReader PUBLIC include ${CMAKE_CURRENT_BINARY_DIR})
+
+install(TARGETS ZenReader DESTINATION lib)
+install(FILES ${ZenReader_SOURCES} DESTINATION include)
+
+
+## Use /MT instead of /MD ##
+
+set(CompilerFlags
+        CMAKE_CXX_FLAGS
+        CMAKE_CXX_FLAGS_DEBUG
+        CMAKE_CXX_FLAGS_RELWITHDEBINFO
+        CMAKE_CXX_FLAGS_MINSIZEREL
+        CMAKE_CXX_FLAGS_RELEASE
+        CMAKE_C_FLAGS
+        CMAKE_C_FLAGS_DEBUG
+        CMAKE_C_FLAGS_RELWITHDEBINFO
+        CMAKE_C_FLAGS_MINSIZEREL
+        CMAKE_C_FLAGS_RELEASE
+        )
+foreach(CompilerFlag ${CompilerFlags})
+    string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+endforeach()
+
+
+## Force MSVC to have conformance with other compilers ##
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(ZenReader PRIVATE "/permissive-")
+
+
+## Give non MSVC compilers some intrinsics (AES is required) ##
+
+else()
+    target_compile_options(ZenReader PRIVATE "-march=native")
+endif()
+
+
+## Dependencies ##
+
+target_link_libraries(ZenReader
+    "${CMAKE_CURRENT_SOURCE_DIR}\\src\\Helpers\\oo2core_8_win64.lib"
+)
+
+if (USE_JSON)
+    target_compile_definitions(ZenReader PRIVATE USE_JSON)
+    find_package(RapidJSON CONFIG REQUIRED)
+    target_include_directories(ZenReader PRIVATE ${RAPIDJSON_INCLUDE_DIRS})
+endif()
 
 
 ## Properties ##
