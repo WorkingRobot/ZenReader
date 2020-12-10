@@ -14,10 +14,11 @@
 #include "Str.h"
 #include "Text.h"
 #include "Interface.h"
-//#include "MulticastDelegate.h"
-//#include "LazyObject.h"
-#include "SoftObject.h"
+#include "MulticastDelegate.h"
+#include "WeakObject.h"
+#include "LazyObject.h"
 #include "AssetObject.h"
+#include "SoftObject.h"
 #include "UInt64.h"
 #include "UInt32.h"
 #include "UInt16.h"
@@ -27,6 +28,7 @@
 #include "Map.h"
 #include "Set.h"
 #include "Enum.h"
+#include "FieldPath.h"
 
 namespace Zen::Properties {
 	using namespace Enums;
@@ -49,10 +51,11 @@ namespace Zen::Properties {
 	CASE(StrProperty);
 	CASE(TextProperty);
 	CASE(InterfaceProperty);
-	//CASE(MulticastDelegateProperty);
-	//CASE(LazyObjectProperty);
+	CASE(MulticastDelegateProperty);
+	// CASE(WeakObjectProperty);
+	// CASE(LazyObjectProperty); (Alias of SoftObjectProperty)
+	// CASE(AssetObjectProperty);
 	CASE(SoftObjectProperty);
-	// CASE(AssetObjectProperty); (Alias of SoftObjectProperty)
 	CASE(UInt64Property);
 	CASE(UInt32Property);
 	CASE(UInt16Property);
@@ -62,6 +65,7 @@ namespace Zen::Properties {
 	CASE(MapProperty);
 	CASE(SetProperty);
 	CASE(EnumProperty);
+	CASE(FieldPathProperty);
 
 #undef CASE
 
@@ -83,10 +87,11 @@ namespace Zen::Properties {
 			CASE(StrProperty);
 			CASE(TextProperty);
 			CASE(InterfaceProperty);
-			//CASE(MulticastDelegateProperty);
-			//CASE(LazyObjectProperty);
-			CASE(SoftObjectProperty);
+			CASE(MulticastDelegateProperty);
+			CASE(WeakObjectProperty);
+			CASE(LazyObjectProperty);
 			CASE(AssetObjectProperty);
+			CASE(SoftObjectProperty);
 			CASE(UInt64Property);
 			CASE(UInt32Property);
 			CASE(UInt16Property);
@@ -96,6 +101,7 @@ namespace Zen::Properties {
 			CASE(MapProperty);
 			CASE(SetProperty);
 			CASE(EnumProperty);
+			CASE(FieldPathProperty);
 
 #undef CASE
 		default:

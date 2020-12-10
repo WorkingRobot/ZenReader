@@ -12,14 +12,14 @@ namespace Zen::Properties {
 			int NumKeysToRemove;
 			InputStream >> NumKeysToRemove;
 			for (int i = 0; i < NumKeysToRemove; ++i) {
-				Serialize<EReadType::MAP>(InputStream, PropData, PropData.GetMapKeyType());
+				Serialize<EReadType::MAP>(InputStream, *PropData.GetData().Map.InnerType);
 			}
 
 			int NumEntries;
 			InputStream >> NumEntries;
 			Value.reserve(NumEntries);
 			for (int i = 0; i < NumEntries; ++i) {
-				Value.emplace_back(Serialize<EReadType::MAP>(InputStream, PropData, PropData.GetMapKeyType()), Serialize<EReadType::MAP>(InputStream, PropData, PropData.GetMapValueType()));
+				Value.emplace_back(Serialize<EReadType::MAP>(InputStream, *PropData.GetData().Map.InnerType), Serialize<EReadType::MAP>(InputStream, *PropData.GetData().Map.ValueType));
 			}
 		}
 

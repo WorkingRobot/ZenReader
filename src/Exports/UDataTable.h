@@ -11,7 +11,7 @@ namespace Zen::Exports {
 
 	class UDataTable : public UObject {
 	public:
-		UDataTable(Streams::BaseStream& InputStream, const Providers::Schema& Schema) : UObject(InputStream, Schema) {
+		UDataTable(Streams::BaseStream& InputStream, const Providers::Class& Schema) : UObject(InputStream, Schema) {
 			auto ZExp = (const ZExport*)InputStream.GetProperty<Streams::PropId::ZExport>();
 			auto GlobalData = (const ZGlobalData*)InputStream.GetProperty<Streams::PropId::GlobalData>();
 			auto Provider = (const Providers::BaseProvider*)InputStream.GetProperty<Streams::PropId::Provider>();
@@ -28,7 +28,7 @@ namespace Zen::Exports {
 				throw ArchiveCorruptedException("The RowStruct property must be a ScriptImport");
 			}
 			auto& RowStructType = GlobalData->GetEntryName(RowStructImport);
-			auto RowSchema = Provider->GetSchema(RowStructType);
+			auto RowSchema = Provider->GetStruct(RowStructType);
 			if (!RowSchema) {
 				throw SchemaNotFoundException("The schema for the row type \"%s\" was not found", RowStructType.c_str());
 			}
@@ -40,11 +40,11 @@ namespace Zen::Exports {
 			for (int i = 0; i < NumRows; ++i) {
 				FName Key;
 				InputStream >> Key;
-				RowMap.emplace_back(std::move(Key), UObject(InputStream, *RowSchema, StructFallback));
+				RowMap.emplace_back(std::move(Key), UStructFallback(InputStream, *RowSchema));
 			}
 		}
 
 		ECurveTableMode CurveTableMode;
-		std::vector<std::pair<FName, UObject>> RowMap;
+		std::vector<std::pair<FName, UStructFallback>> RowMap;
 	};
 }

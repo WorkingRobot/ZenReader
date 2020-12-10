@@ -13,7 +13,7 @@ namespace Zen::Properties {
 		// https://github.com/EpicGames/UnrealEngine/blob/bf95c2cbc703123e08ab54e3ceccdd47e48d224a/Engine/Source/Runtime/CoreUObject/Private/UObject/PropertySet.cpp#L216
 		EnumProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
 			int EnumIdx;
-			switch (PropData.GetEnumType())
+			switch (PropData.GetData().Enum.InnerType->GetType())
 			{
 			case EPropertyType::ByteProperty:
 			{
@@ -28,21 +28,22 @@ namespace Zen::Properties {
 			default:
 				throw PropertyTypeNotFoundException("Enum properties only support Byte or Int enum types");
 			}
+
 			// If a normal (not unversioned) reader, read it a as FName instead
 			auto Provider = (const Providers::BaseProvider*)InputStream.GetProperty<Streams::PropId::Provider>();
 			if (!Provider) {
 				throw StreamPropertyNotFoundException("EnumProperty must be deserialized from ZExport");
 			}
-			auto Enum = Provider->GetEnum(PropData.GetEnumName());
+			auto& EnumName = PropData.GetData().Enum.EnumName.get();
+			auto Enum = Provider->GetEnum(EnumName);
 			if (!Enum) {
-				throw EnumNotFoundException("The enum \"%s\" was not found", PropData.GetEnumName().c_str());
+				throw EnumNotFoundException("The enum \"%s\" was not found", EnumName.c_str());
 			}
-			auto EnumIdxName = (*Enum)[EnumIdx];
-			if (EnumIdxName) {
-				this->Value = PropData.GetEnumName().string() + "::" + EnumIdxName->string();
+			if (EnumIdx < Enum->GetNameCount()) {
+				this->Value = EnumName.string() + "::" + Enum->GetName(EnumIdx).string();
 			}
 			else {
-				this->Value = PropData.GetEnumName().string() + "::" + std::to_string(EnumIdx);
+				this->Value = EnumName.string() + "::" + std::to_string(EnumIdx);
 			}
 		}
 

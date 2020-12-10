@@ -94,7 +94,7 @@ namespace Zen {
 
 		typename decltype(Names)::const_iterator SearchValues(const char* KeyString, typename KeyType::KeySize KeyStringSize) const {
 			// Forces a call to the non const SearchValues and converts the return value to a const_iterator
-			return ((std::remove_cvref<decltype(*this)>::type)*this).SearchValues(KeyString, KeyStringSize);
+			return ((std::remove_cvref_t<decltype(*this)>*)this)->SearchValues(KeyString, KeyStringSize);
 		}
 	};
 }

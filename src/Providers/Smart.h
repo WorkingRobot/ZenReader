@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Base.h"
+#include "../Enums/ECompressionMethod.h"
 #include "../Exceptions/BaseException.h"
 #include "../Helpers/Decompress.h"
 #include "../Streams/BufferStream.h"
@@ -9,7 +10,29 @@
 #include <filesystem>
 
 namespace Zen::Providers::Smart {
+	using namespace Enums;
 	using namespace Exceptions;
+
+	namespace {
+		// Type to use for indexing the name lut
+		using NameIdx = uint32_t;
+		// Maximum size of a name (in name lut)
+		using NameSize = uint8_t;
+		// Type to use for indicating the size of the enum list
+		// Literally only saves like 2 bytes or something that's going to be
+		// compressed anyway.
+		using EnumIdx = uint32_t;
+		using EnumNameIdx = uint8_t;
+
+		using SchemaIdx = uint32_t;
+		// Has to be the same as PropCount
+		// PostProcessSettings struct in Engine has like 300 props, too
+		using SchemaPropIdx = uint16_t;
+
+		// First 2 bytes of the usmap
+		static constexpr uint16_t FileMagic = 0x30C4;
+		static constexpr NameIdx InvalidName = std::numeric_limits<NameIdx>::max();
+	}
 
 	class Provider : public BaseProvider {
 	public:
@@ -27,9 +50,12 @@ namespace Zen::Providers::Smart {
 
 			uint16_t Magic;
 			CompressedInputStream >> Magic;
-			if (Magic != 0x30C4) {
+			if (Magic != FileMagic) {
 				throw InvalidMagicException(".usmap file has an invalid magic constant");
 			}
+
+			uint8_t Method;
+			CompressedInputStream >> Method;
 
 			uint32_t CompSize;
 			CompressedInputStream >> CompSize;
@@ -38,20 +64,105 @@ namespace Zen::Providers::Smart {
 				throw ArchiveCorruptedException("There is not enough data in the .usmap file");
 			}
 
-			auto Data = std::make_unique<char[]>(DecompSize);
 			auto CompData = std::make_unique<char[]>(CompSize);
 			CompressedInputStream.read(CompData.get(), CompSize);
 
-			Helpers::Decompress(Data.get(), DecompSize, CompData.get(), CompSize, "Oodle");
-			return Data;
+			switch ((ECompressionMethod)Method)
+			{
+			case ECompressionMethod::None:
+				if (CompSize != DecompSize) {
+					throw DecompressionException("No compression: Compression size must be equal to decompression size");
+				}
+				return CompData;
+			case ECompressionMethod::Oodle:
+			{
+				auto Data = std::make_unique<char[]>(DecompSize);
+				Helpers::DecompressOodle(Data.get(), DecompSize, CompData.get(), CompSize);
+				return Data;
+			}
+#ifdef USE_BROTLI
+			case ECompressionMethod::Brotli:
+			{
+				auto Data = std::make_unique<char[]>(DecompSize);
+				Helpers::DecompressBrotli(Data.get(), DecompSize, CompData.get(), CompSize);
+				return Data;
+			}
+#endif
+			default:
+				throw DecompressionException("Unknown compression method: %d", (int)Method);
+			}
+		}
+
+		void DeserializePropData(Streams::BaseStream& Stream, PropertyData& PropData) {
+			uint8_t PropType;
+			Stream >> PropType;
+			auto& Data = PropData.GetEditableData((EPropertyType)PropType);
+			switch (PropData.GetType())
+			{
+			case EPropertyType::EnumProperty:
+			{
+				DeserializePropData(Stream, *Data.Enum.InnerType);
+				NameIdx Idx;
+				Stream >> Idx;
+				Data.Enum.EnumName = NameLUT[Idx];
+				break;
+			}
+			case EPropertyType::StructProperty:
+			{
+				NameIdx Idx;
+				Stream >> Idx;
+				Data.Struct.StructType = NameLUT[Idx];
+				break;
+			}
+			case EPropertyType::SetProperty:
+			case EPropertyType::ArrayProperty:
+				DeserializePropData(Stream, *Data.Array.InnerType);
+				break;
+			case EPropertyType::MapProperty:
+				DeserializePropData(Stream, *Data.Map.InnerType);
+				DeserializePropData(Stream, *Data.Map.ValueType);
+				break;
+			default:
+				break;
+			}
+		}
+
+		template<bool HasSuperType, class Type>
+		Type DeserializeStruct(Streams::BaseStream& Stream) {
+			NameIdx Idx;
+			Stream >> Idx;
+			uint16_t PropCount;
+			Stream >> PropCount;
+
+			SchemaPropIdx SerializablePropCount;
+			Stream >> SerializablePropCount;
+			std::vector<Property> Props;
+			Props.reserve(SerializablePropCount);
+			for (SchemaPropIdx i = 0; i < SerializablePropCount; ++i) {
+				uint16_t SchemaIdx;
+				NameIdx Idx;
+				Stream >> SchemaIdx;
+				Stream >> Idx;
+				auto& Prop = Props.emplace_back(NameLUT[Idx], SchemaIdx);
+				DeserializePropData(Stream, Prop.GetEditableData());
+			}
+
+			if constexpr (HasSuperType) {
+				NameIdx SuperIdx;
+				Stream >> SuperIdx;
+				return Type(NameLUT[Idx], SuperIdx != InvalidName ? &NameLUT[SuperIdx] : nullptr, PropCount, std::move(Props));
+			}
+			else {
+				return Type(NameLUT[Idx], PropCount, std::move(Props));
+			}
 		}
 
 		void ParseData(Streams::BaseStream& InputStream) {
 			{
-				uint16_t Size;
+				NameIdx Size;
 				InputStream >> Size;
-				for (uint16_t i = 0; i < Size; ++i) {
-					uint8_t NameSize;
+				for (NameIdx i = 0; i < Size; ++i) {
+					NameSize NameSize;
 					InputStream >> NameSize;
 					auto NameData = std::make_unique<char[]>(NameSize + 1);
 					InputStream.read(NameData.get(), NameSize);
@@ -61,19 +172,19 @@ namespace Zen::Providers::Smart {
 			}
 
 			{
-				uint16_t Size;
+				EnumIdx Size;
 				InputStream >> Size;
 				Enums.reserve(Size);
-				for (uint16_t i = 0; i < Size; ++i) {
-					uint16_t Idx;
+				for (EnumIdx i = 0; i < Size; ++i) {
+					NameIdx Idx;
 					InputStream >> Idx;
 
 					std::vector<std::reference_wrapper<const NameEntry>> EnumNames;
-					uint8_t EnumNamesSize;
+					EnumNameIdx EnumNamesSize;
 					InputStream >> EnumNamesSize;
 					EnumNames.reserve(EnumNamesSize);
-					for (uint8_t i = 0; i < EnumNamesSize; ++i) {
-						uint16_t Idx;
+					for (EnumNameIdx i = 0; i < EnumNamesSize; ++i) {
+						NameIdx Idx;
 						InputStream >> Idx;
 						EnumNames.emplace_back(NameLUT[Idx]);
 					}
@@ -83,89 +194,20 @@ namespace Zen::Providers::Smart {
 			}
 
 			{
-				uint16_t Size;
+				SchemaIdx Size;
 				InputStream >> Size;
-				Enums.reserve(Size);
-				for (uint16_t i = 0; i < Size; ++i) {
-					uint16_t Idx;
-					InputStream >> Idx;
+				Structs.reserve(Size);
+				for (SchemaIdx i = 0; i < Size; ++i) {
+					Structs.emplace_back(std::move(DeserializeStruct<false, Struct>(InputStream)));
+				}
+			}
 
-					std::vector<Property> Props;
-					uint8_t PropsSize;
-					InputStream >> PropsSize;
-					Props.reserve(PropsSize);
-					for (uint8_t i = 0; i < PropsSize; ++i) {
-						uint16_t SchemaIdx;
-						uint16_t Idx;
-						uint8_t Type;
-						InputStream >> SchemaIdx;
-						InputStream >> Idx;
-						InputStream >> Type;
-						auto& Prop = Props.emplace_back(NameLUT[Idx], SchemaIdx, (EPropertyType)Type);
-
-						auto& PropData = Prop.GetEditableData();
-						switch (Prop.Type)
-						{
-						case EPropertyType::BoolProperty: {
-							InputStream >> PropData.Bool.Bool;
-							break;
-						}
-						case EPropertyType::EnumProperty:
-						{
-							uint16_t Idx;
-							uint8_t Type;
-							InputStream >> Idx;
-							InputStream >> Type;
-							PropData.Enum.Name = NameLUT[Idx];
-							PropData.Enum.Type = (EPropertyType)Type;
-							break;
-						}
-						case EPropertyType::ByteProperty:
-						{
-							uint16_t Idx;
-							InputStream >> Idx;
-							PropData.Byte.EnumName = Idx != USHRT_MAX ? &NameLUT[Idx] : nullptr;
-							break;
-						}
-						case EPropertyType::StructProperty:
-						{
-							uint16_t Idx;
-							InputStream >> Idx;
-							PropData.Struct.Type = NameLUT[Idx];
-							break;
-						}
-						case EPropertyType::SetProperty:
-						case EPropertyType::ArrayProperty:
-						{
-							uint8_t Type;
-							InputStream >> Type;
-							PropData.Array.InnerType = (EPropertyType)Type;
-							if (PropData.Array.InnerType == EPropertyType::StructProperty) {
-								uint16_t Idx;
-								InputStream >> Idx;
-								PropData.Array.StructType = NameLUT[Idx];
-							}
-							break;
-						}
-						case EPropertyType::MapProperty:
-						{
-							uint8_t KeyType;
-							uint8_t ValueType;
-							InputStream >> KeyType;
-							InputStream >> ValueType;
-							PropData.Map.KeyType = (EPropertyType)KeyType;
-							PropData.Map.ValueType = (EPropertyType)ValueType;
-							if (PropData.Map.KeyType == EPropertyType::StructProperty || PropData.Map.ValueType == EPropertyType::StructProperty) {
-								uint16_t Idx;
-								InputStream >> Idx;
-								PropData.Map.StructType = NameLUT[Idx];
-							}
-							break;
-						}
-						}
-					}
-
-					Schemas.emplace_back(NameLUT[Idx], std::move(Props));
+			{
+				SchemaIdx Size;
+				InputStream >> Size;
+				Classes.reserve(Size);
+				for (SchemaIdx i = 0; i < Size; ++i) {
+					Classes.emplace_back(std::move(DeserializeStruct<true, Class>(InputStream)));
 				}
 			}
 		}

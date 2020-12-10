@@ -21,7 +21,9 @@ namespace Zen::Properties {
 		std::any Value;
 
 		StructProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
-			switch (Helpers::Hash::Crc32(PropData.GetStructType().c_str(), PropData.GetStructType().size()))
+			
+			auto& StructType = PropData.GetData().Struct.StructType.get();
+			switch (Helpers::Hash::Crc32(StructType.c_str(), StructType.size()))
 			{
 #define CASE(Name, Type) case Helpers::Hash::Crc32(Name): InputStream >> Value.emplace<Type>(); break
 
@@ -76,11 +78,11 @@ namespace Zen::Properties {
 				if (!Provider) {
 					throw StreamPropertyNotFoundException("StructProperty must be deserialized from ZExport");
 				}
-				auto Schema = Provider->GetSchema(PropData.GetStructType());
-				if (!Schema) {
-					throw SchemaNotFoundException("The schema for struct \"%s\" was not found", PropData.GetStructType().c_str());
+				auto Struct = Provider->GetStruct(StructType);
+				if (!Struct) {
+					throw SchemaNotFoundException("The schema for struct \"%s\" was not found", StructType.c_str());
 				}
-				EmplaceUObject(InputStream, *Schema);
+				EmplaceUStructFallback(InputStream, *Struct);
 				break;
 			}
 			}
@@ -98,6 +100,6 @@ namespace Zen::Properties {
 
 	private:
 		// Prevents the #include for the UObject (which in turn includes Lookup.h, creating a cyclic dependency)
-		void EmplaceUObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema);
+		void EmplaceUStructFallback(Streams::BaseStream& InputStream, const Providers::Struct& Struct);
 	};
 }

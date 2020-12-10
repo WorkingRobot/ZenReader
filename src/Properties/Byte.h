@@ -1,8 +1,5 @@
 #pragma once
 
-#include "../Exceptions/BaseException.h"
-#include "../Structs/FName.h"
-#include "../ZExport.h"
 #include "Base.h"
 
 namespace Zen::Properties {
@@ -12,34 +9,21 @@ namespace Zen::Properties {
 	public:
 		uint8_t Value;
 
-		ByteProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData) {
-			if (PropData.GetByteEnumName()) {
-				Structs::FName Name;
-				InputStream >> Name;
-				
-				auto ZExp = (const ZExport*)InputStream.GetProperty<Streams::PropId::ZExport>();
-				if (!ZExp) {
-					throw StreamPropertyNotFoundException("ByteProperty must be deserialized from ZExport");
-				}
-				Value = atoi(Name.Get(ZExp->GetNameMap()).c_str());
-			}
-			else {
-				// if the FPropertyTag has an EnumName, this is an FName instead
-				InputStream >> Value;
-			}
-		}
-
-		ByteProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadArray) {
+		ByteProperty(Streams::BaseStream& InputStream) {
 			InputStream >> Value;
 		}
 
-		ByteProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadMap) {
+		ByteProperty(Streams::BaseStream& InputStream, EReadArray) {
+			InputStream >> Value;
+		}
+
+		ByteProperty(Streams::BaseStream& InputStream, EReadMap) {
 			uint32_t Val;
 			InputStream >> Val;
 			Value = Val;
 		}
 
-		ByteProperty(Streams::BaseStream& InputStream, const Providers::PropertyData& PropData, EReadZero) : Value(0) {}
+		ByteProperty(Streams::BaseStream& InputStream, EReadZero) : Value(0) {}
 
 		EPropertyType GetType() const override {
 			return EPropertyType::ByteProperty;

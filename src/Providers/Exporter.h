@@ -3,19 +3,22 @@
 // No reason to use this code in client code, this is only used to export existing providers
 // to the more optimized SmartProvider
 
+#include "../Enums/ECompressionMethod.h"
 #include "../Exceptions/BaseException.h"
 #include "../Helpers/Compress.h"
 #include "../Streams/MemoryStream.h"
-#include "Base.h"
+#include "Smart.h"
 
 #include <algorithm>
 
 namespace Zen::Providers {
+	using namespace Enums;
 	using namespace Exceptions;
+	using namespace Smart;
 
 	namespace {
-		uint16_t GetNameIdx(const NameEntry& Val, const std::deque<NameEntry>& NameLUT) {
-			uint16_t i = 0;
+		NameIdx GetNameIdx(const NameEntry& Val, const std::deque<NameEntry>& NameLUT) {
+			NameIdx i = 0;
 			for (auto& Name : NameLUT) {
 				if (Val == Name) {
 					return i;
@@ -24,84 +27,122 @@ namespace Zen::Providers {
 			}
 			throw NameNotFoundException("The name \"%s\" could not be found", Val.c_str());
 		}
+
+		void SerializePropData(Streams::BaseStream& Stream, const PropertyData& PropData, const std::deque<NameEntry>& NameLUT) {
+			Stream << (uint8_t)PropData.GetType();
+			auto& Data = PropData.GetData();
+			switch (PropData.GetType())
+			{
+			case EPropertyType::EnumProperty:
+				SerializePropData(Stream, *Data.Enum.InnerType, NameLUT);
+				Stream << GetNameIdx(Data.Enum.EnumName, NameLUT);
+				break;
+			case EPropertyType::StructProperty:
+				Stream << GetNameIdx(Data.Struct.StructType, NameLUT);
+				break;
+			case EPropertyType::SetProperty:
+			case EPropertyType::ArrayProperty:
+				SerializePropData(Stream, *Data.Array.InnerType, NameLUT);
+				break;
+			case EPropertyType::MapProperty:
+				SerializePropData(Stream, *Data.Map.InnerType, NameLUT);
+				SerializePropData(Stream, *Data.Map.ValueType, NameLUT);
+				break;
+			default:
+				break;
+			}
+		}
+
+		void SerializeStruct(Streams::BaseStream& Stream, const Struct& Struct, const std::deque<NameEntry>& NameLUT) {
+			Stream << GetNameIdx(Struct.GetName(), NameLUT);
+			Stream << Struct.GetPropCount();
+
+			Stream << (SchemaPropIdx)Struct.GetSerializablePropCount();
+			for (auto& Prop : Struct.GetProps()) {
+				Stream << Prop.GetSchemaIdx();
+				Stream << GetNameIdx(Prop.GetName(), NameLUT);
+				SerializePropData(Stream, Prop.GetData(), NameLUT);
+			}
+		}
+
+		void WriteUsmapData(const char* OutputFile, ECompressionMethod Compression, uint32_t CompSize, uint32_t DecompSize, const char* CompData) {
+			Streams::MemoryStream OutputFileStream;
+			OutputFileStream << FileMagic;
+			OutputFileStream << (uint8_t)Compression;
+			OutputFileStream << CompSize;
+			OutputFileStream << DecompSize;
+			OutputFileStream.write(CompData, CompSize);
+
+			OutputFileStream.Dump(OutputFile);
+		}
 	}
 
-	void Export(const char* OutputFile, const BaseProvider& Provider) {
+	void Export(const char* OutputFile, const BaseProvider& Provider, ECompressionMethod Compression) {
+		if (Provider.NameLUT.size() >= std::numeric_limits<NameIdx>::max()) {
+			throw BaseException("Name LUT would overflow the index type. LUT size: %zu", Provider.NameLUT.size());
+		}
+
 		Streams::MemoryStream OutputStream;
 
-		OutputStream << (uint16_t)Provider.NameLUT.size();
+		OutputStream << (NameIdx)Provider.NameLUT.size();
 		for (auto& Name : Provider.NameLUT) {
-			OutputStream << (uint8_t)Name.size();
+			if (Name.size() > std::numeric_limits<NameSize>::max()) {
+				throw BaseException("Name would overflow the size type. Name size: %zu", Name.size());
+			}
+			OutputStream << (NameSize)Name.size();
 			OutputStream.write(Name.c_str(), Name.size());
 		}
 
-		OutputStream << (uint16_t)Provider.Enums.size();
+		OutputStream << (EnumIdx)Provider.Enums.size();
 		for (auto& Enum : Provider.Enums) {
-			OutputStream << GetNameIdx(Enum.Name, Provider.NameLUT);
+			OutputStream << GetNameIdx(Enum.GetName(), Provider.NameLUT);
 
-			OutputStream << (uint8_t)Enum.Names.size();
-			for (auto& Name : Enum.Names) {
+			OutputStream << (EnumNameIdx)Enum.GetNameCount();
+			for (auto& Name : Enum.GetNames()) {
 				OutputStream << GetNameIdx(Name, Provider.NameLUT);
 			}
 		}
 
-		OutputStream << (uint16_t)Provider.Schemas.size();
-		for (auto& Schema : Provider.Schemas) {
-			OutputStream << GetNameIdx(Schema.Name, Provider.NameLUT);
-
-			OutputStream << (uint8_t)Schema.Properties.size();
-			for (auto& Prop : Schema.Properties) {
-				OutputStream << Prop.GetSchemaIdx();
-				OutputStream << GetNameIdx(Prop.GetName(), Provider.NameLUT);
-				OutputStream << (uint8_t)Prop.GetType();
-				auto& Data = Prop.GetData();
-				switch (Prop.GetType())
-				{
-				case EPropertyType::BoolProperty:
-					OutputStream << Data.GetBoolVal();
-					break;
-				case EPropertyType::EnumProperty:
-					OutputStream << GetNameIdx(Data.GetEnumName(), Provider.NameLUT);
-					OutputStream << (uint8_t)Data.GetEnumType();
-					break;
-				case EPropertyType::ByteProperty:
-					if (Data.GetByteEnumName()) {
-						OutputStream << GetNameIdx(*Data.GetByteEnumName(), Provider.NameLUT);
-					}
-					else {
-						OutputStream << (uint16_t)USHRT_MAX;
-					}
-					break;
-				case EPropertyType::StructProperty:
-					OutputStream << GetNameIdx(Data.GetStructType(), Provider.NameLUT);
-					break;
-				case EPropertyType::SetProperty:
-				case EPropertyType::ArrayProperty:
-					OutputStream << (uint8_t)Data.GetArrayInnerType();
-					if (Data.GetArrayInnerType() == EPropertyType::StructProperty) {
-						OutputStream << GetNameIdx(Data.GetStructType(), Provider.NameLUT);
-					}
-					break;
-				case EPropertyType::MapProperty:
-					OutputStream << (uint8_t)Data.GetMapKeyType();
-					OutputStream << (uint8_t)Data.GetMapValueType();
-					if (Data.GetMapKeyType() == EPropertyType::StructProperty || Data.GetMapValueType() == EPropertyType::StructProperty) {
-						OutputStream << GetNameIdx(Data.GetStructType(), Provider.NameLUT);
-					}
-					break;
-				}
-			}
+		OutputStream << (SchemaIdx)Provider.Structs.size();
+		for (auto& Struct : Provider.Structs) {
+			SerializeStruct(OutputStream, Struct, Provider.NameLUT);
 		}
 
-		SINTa CompSize;
-		auto CompData = Helpers::Compress(OutputStream.get(), OutputStream.size(), OodleLZ_Compressor_Leviathan, OodleLZ_CompressionLevel_Max, CompSize);
+		OutputStream << (SchemaIdx)Provider.Classes.size();
+		for (auto& Class : Provider.Classes) {
+			SerializeStruct(OutputStream, Class, Provider.NameLUT);
 
-		Streams::MemoryStream OutputFileStream;
-		OutputFileStream << (uint16_t)0x30C4; // japanese smiley face :)
-		OutputFileStream << (uint32_t)CompSize;
-		OutputFileStream << (uint32_t)OutputStream.size();
-		OutputFileStream.write(CompData.get(), CompSize);
+			OutputStream << (Class.HasSuperType() ? GetNameIdx(Class.GetSuperType(), Provider.NameLUT) : InvalidName);
+		}
 
-		OutputFileStream.Dump(OutputFile);
+		uint32_t CompSize;
+		uint32_t DecompSize;
+		const char* CompData;
+		switch (Compression)
+		{
+		case ECompressionMethod::None:
+		{
+			WriteUsmapData(OutputFile, Compression, OutputStream.size(), OutputStream.size(), OutputStream.get());
+			break;
+		}
+		case ECompressionMethod::Oodle:
+		{
+			SINTa CompSize;
+			auto CompData = Helpers::CompressOodle(OutputStream.get(), OutputStream.size(), OodleLZ_Compressor_Leviathan, OodleLZ_CompressionLevel_Max, CompSize);
+			WriteUsmapData(OutputFile, Compression, CompSize, OutputStream.size(), CompData.get());
+			break;
+		}
+#ifdef USE_BROTLI
+		case ECompressionMethod::Brotli:
+		{
+			size_t CompSize;
+			auto CompData = Helpers::CompressBrotli(OutputStream.get(), OutputStream.size(), BROTLI_MODE_GENERIC, BROTLI_MAX_QUALITY, CompSize);
+			WriteUsmapData(OutputFile, Compression, CompSize, OutputStream.size(), CompData.get());
+			break;
+		}
+#endif
+		default:
+			break;
+		}
 	}
 }

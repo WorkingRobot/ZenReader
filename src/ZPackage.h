@@ -4,6 +4,7 @@
 #include "ZFile.h"
 #include "ZExport.h"
 #include "Enums/EAssetType.h"
+#include "Providers/Base.h"
 
 namespace Zen {
 	template<typename Key>

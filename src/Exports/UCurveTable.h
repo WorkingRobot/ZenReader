@@ -7,7 +7,7 @@
 namespace Zen::Exports {
 	class UCurveTable : public UExport {
 	public:
-		UCurveTable(Streams::BaseStream& InputStream, const Providers::Schema& Schema) {
+		UCurveTable(Streams::BaseStream& InputStream, const Providers::Struct& RowSchema) {
 			InputStream.seek(6, Streams::BaseStream::Cur);
 			// u16: 256, u32: 0
 
@@ -22,11 +22,11 @@ namespace Zen::Exports {
 			for (int i = 0; i < NumRows; ++i) {
 				FName Key;
 				InputStream >> Key;
-				RowMap.emplace_back(std::move(Key), UObject(InputStream, Schema, StructFallback));
+				RowMap.emplace_back(std::move(Key), UStructFallback(InputStream, RowSchema));
 			}
 		}
 
 		ECurveTableMode CurveTableMode;
-		std::vector<std::pair<FName, UObject>> RowMap;
+		std::vector<std::pair<FName, UStructFallback>> RowMap;
 	};
 }

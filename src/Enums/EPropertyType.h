@@ -17,10 +17,11 @@ namespace Zen::Enums {
 		StrProperty,
 		TextProperty,
 		InterfaceProperty,
-		//MulticastDelegateProperty,
-		//LazyObjectProperty,
+		MulticastDelegateProperty,
+		WeakObjectProperty, //
+		LazyObjectProperty, // When deserialized, these 3 properties will be SoftObjects
+		AssetObjectProperty, //
 		SoftObjectProperty,
-		AssetObjectProperty, // When deserialized, all AssetObjects will be SoftObjects
 		UInt64Property,
 		UInt32Property,
 		UInt16Property,
@@ -30,6 +31,7 @@ namespace Zen::Enums {
 		MapProperty,
 		SetProperty,
 		EnumProperty,
+		FieldPathProperty,
 
 		Unknown = 0xFF
 	};

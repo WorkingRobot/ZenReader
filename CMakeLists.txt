@@ -4,7 +4,9 @@ project(ZenReader)
 
 ## Options ##
 
-option(USE_JSON "Requires RapidJSON, allows the use of FModel's and JohnWickParse's mappings" OFF)
+option(USE_JSON "Requires RapidJSON, allows the use of FModel's, FunGames's, and JohnWickParse's mappings" OFF)
+option(USE_BROTLI "Requires brotli, allows the use of brotli compressed usmap files" OFF)
+option(USE_BROTLI_STATIC "Requires USE_BROTLI to be ON, uses the static build of brotli" OFF)
 
 
 ## Source Files ##
@@ -82,7 +84,7 @@ endif()
 
 ## Dependencies ##
 
-target_link_libraries(ZenReader
+target_link_libraries(ZenReader PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}\\src\\Helpers\\oo2core_8_win64.lib"
 )
 
@@ -90,6 +92,16 @@ if (USE_JSON)
     target_compile_definitions(ZenReader PRIVATE USE_JSON)
     find_package(RapidJSON CONFIG REQUIRED)
     target_include_directories(ZenReader PRIVATE ${RAPIDJSON_INCLUDE_DIRS})
+endif()
+
+if (USE_BROTLI)
+    target_compile_definitions(ZenReader PRIVATE USE_BROTLI)
+    find_package(unofficial-brotli CONFIG REQUIRED)
+    if (USE_BROTLI_STATIC)
+        target_link_libraries(ZenReader PRIVATE unofficial::brotli::brotlidec-static unofficial::brotli::brotlienc-static unofficial::brotli::brotlicommon-static)
+    else()
+         target_link_libraries(ZenReader PRIVATE unofficial::brotli::brotlidec unofficial::brotli::brotlienc unofficial::brotli::brotlicommon)
+    endif()
 endif()
 
 

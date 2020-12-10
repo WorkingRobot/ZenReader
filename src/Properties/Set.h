@@ -13,7 +13,7 @@ namespace Zen::Properties {
 			int NumKeysToRemove;
 			InputStream >> NumKeysToRemove;
 			for (int i = 0; i < NumKeysToRemove; ++i) {
-				Serialize<EReadType::ARRAY>(InputStream, PropData, PropData.GetArrayInnerType());
+				Serialize<EReadType::ARRAY>(InputStream, *PropData.GetData().Array.InnerType);
 			}
 
 			int NumEntries;
@@ -21,7 +21,7 @@ namespace Zen::Properties {
 			Value.reserve(NumEntries);
 
 			for (int i = 0; i < NumEntries; ++i) {
-				Value.emplace_back(Serialize<EReadType::ARRAY>(InputStream, PropData, PropData.GetArrayInnerType()));
+				Value.emplace_back(Serialize<EReadType::ARRAY>(InputStream, *PropData.GetData().Array.InnerType));
 			}
 		}
 

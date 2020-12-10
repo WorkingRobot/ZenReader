@@ -42,111 +42,153 @@ namespace Zen::Providers {
 	};
 
 	class Enum {
-	public:
 		std::vector<std::reference_wrapper<const NameEntry>> Names;
 		const NameEntry& Name;
 
+	public:
 		Enum(const NameEntry& Name, std::vector<std::reference_wrapper<const NameEntry>>&& Names) :
 			Name(Name),
 			Names(std::move(Names))
-		{}
-
-		const NameEntry* operator[](int i) const {
-			if (i >= Names.size()) {
-				return nullptr;
-			}
-			return &Names[i].get();
-		}
-	};
-
-	class PropertyData {
-		union {
-			struct {
-				bool Bool;
-			} Bool;
-			struct {
-				std::reference_wrapper<const NameEntry> Name;
-				EPropertyType Type;
-			} Enum;
-			struct {
-				const NameEntry* EnumName;
-			} Byte;
-			struct {
-				std::reference_wrapper<const NameEntry> Type;
-			} Struct;
-			struct {
-				// UB if not set
-				std::reference_wrapper<const NameEntry> StructType;
-				EPropertyType InnerType;
-			} Array;
-			struct {
-				// UB if not set
-				std::reference_wrapper<const NameEntry> StructType;
-				EPropertyType KeyType;
-				EPropertyType ValueType;
-			} Map;
-		} Data;
-
-	public:
-		PropertyData() : Data{ false } {};
-
-		decltype(Data)& GetEditableData() {
-			return Data;
-		}
-
-		bool GetBoolVal() const {
-			return Data.Bool.Bool;
-		}
-
-		const NameEntry& GetEnumName() const {
-			return Data.Enum.Name;
-		}
-
-		EPropertyType GetEnumType() const {
-			return Data.Enum.Type;
-		}
-
-		const NameEntry* GetByteEnumName() const {
-			return Data.Byte.EnumName;
-		}
-
-		// Note: This will need to be valid in Array and Map properties
-		const NameEntry& GetStructType() const {
-			return Data.Struct.Type;
-		}
-
-		EPropertyType GetArrayInnerType() const {
-			return Data.Array.InnerType;
-		}
-
-		EPropertyType GetMapKeyType() const {
-			return Data.Map.KeyType;
-		}
-
-		EPropertyType GetMapValueType() const {
-			return Data.Map.ValueType;
-		}
-	};
-
-	class Property {
-	public:
-		const NameEntry& Name;
-		uint16_t SchemaIdx;
-		EPropertyType Type;
-		PropertyData Data;
-
-		Property(const NameEntry& Name, uint16_t SchemaIdx, EPropertyType Type) :
-			Name(Name),
-			SchemaIdx(SchemaIdx),
-			Type(Type)
 		{}
 
 		const NameEntry& GetName() const {
 			return Name;
 		}
 
+		const decltype(Names)& GetNames() const {
+			return Names;
+		}
+
+		size_t GetNameCount() const {
+			return Names.size();
+		}
+
+		// No bounds checking, that's up to you :)
+		const NameEntry& GetName(int i) const {
+			return Names[i].get();
+		}
+	};
+
+	class PropertyData {
+		union DataUnion {
+			struct EnumData {
+				PropertyData* InnerType;
+				std::reference_wrapper<const NameEntry> EnumName;
+			} Enum;
+			struct StructData {
+				std::reference_wrapper<const NameEntry> StructType;
+			} Struct;
+			struct ArrayData {
+				PropertyData* InnerType;
+			} Array;
+			struct MapData {
+				PropertyData* InnerType;
+				PropertyData* ValueType;
+			} Map;
+
+			DataUnion() {}
+		} Data;
+
+		EPropertyType Type = EPropertyType::Unknown;
+
+		void Reconstruct(EPropertyType Type) {
+			this->Type = Type;
+			switch (Type)
+			{
+			case EPropertyType::EnumProperty:
+				Data.Enum.InnerType = new PropertyData;
+				break;
+			case EPropertyType::StructProperty:
+				break;
+			case EPropertyType::SetProperty:
+			case EPropertyType::ArrayProperty:
+				Data.Array.InnerType = new PropertyData;
+				break;
+			case EPropertyType::MapProperty:
+				Data.Map.InnerType = new PropertyData;
+				Data.Map.ValueType = new PropertyData;
+				break;
+			default:
+				break;
+			}
+		}
+
+	public:
+		PropertyData() = default;
+
+		PropertyData(PropertyData&& o) : Type(o.Type) {
+			switch (o.Type)
+			{
+			case EPropertyType::EnumProperty:
+				Data.Enum = std::move(o.Data.Enum);
+				break;
+			case EPropertyType::StructProperty:
+				Data.Struct = std::move(o.Data.Struct);
+				break;
+			case EPropertyType::SetProperty:
+			case EPropertyType::ArrayProperty:
+				Data.Array = std::move(o.Data.Array);
+				break;
+			case EPropertyType::MapProperty:
+				Data.Map = std::move(o.Data.Map);
+				break;
+			default:
+				break;
+			}
+		}
+
+		PropertyData(EPropertyType Type) {
+			Reconstruct(Type);
+		}
+
+		~PropertyData() {
+			switch (Type)
+			{
+			case EPropertyType::EnumProperty:
+				delete Data.Enum.InnerType;
+				break;
+			case EPropertyType::StructProperty:
+				break;
+			case EPropertyType::SetProperty:
+			case EPropertyType::ArrayProperty:
+				delete Data.Array.InnerType;
+				break;
+			case EPropertyType::MapProperty:
+				delete Data.Map.InnerType;
+				delete Data.Map.ValueType;
+				break;
+			default:
+				break;
+			}
+		}
+
 		EPropertyType GetType() const {
 			return Type;
+		}
+
+		const DataUnion& GetData() const {
+			return Data;
+		}
+
+		DataUnion& GetEditableData(EPropertyType Type) {
+			Reconstruct(Type);
+			return Data;
+		}
+	};
+
+	class Property {
+		const NameEntry& Name;
+		uint16_t SchemaIdx;
+		PropertyData Data;
+
+	public:
+		Property(const NameEntry& Name, uint16_t SchemaIdx) :
+			Name(Name),
+			SchemaIdx(SchemaIdx)
+		{}
+
+		const NameEntry& GetName() const {
+			return Name;
 		}
 
 		uint16_t GetSchemaIdx() const {
@@ -157,32 +199,69 @@ namespace Zen::Providers {
 			return Data;
 		}
 
-		decltype(auto) GetEditableData() {
-			return Data.GetEditableData();
+		PropertyData& GetEditableData() {
+			return Data;
 		}
 	};
 
-	class Schema {
-	public:
+	class Struct {
 		std::vector<Property> Properties;
 		const NameEntry& Name;
+		uint16_t PropCount;
 
-		Schema(const NameEntry& Name, std::vector<Property>&& Properties) :
+	public:
+		Struct(const NameEntry& Name, uint16_t PropCount, std::vector<Property>&& Properties) :
 			Name(Name),
+			PropCount(PropCount),
 			Properties(std::move(Properties))
 		{}
 
-		const Property& operator[](int i) const {
-			if (Properties.size() > i && Properties[i].GetSchemaIdx() == i) {
-				return Properties[i];
+		const NameEntry& GetName() const {
+			return Name;
+		}
+
+		uint16_t GetPropCount() const {
+			return PropCount;
+		}
+
+		const decltype(Properties)& GetProps() const {
+			return Properties;
+		}
+
+		uint16_t GetSerializablePropCount() const {
+			return Properties.size();
+		}
+
+		const Property& GetProp(int SchemaIdx) const {
+			if (Properties.size() > SchemaIdx && Properties[SchemaIdx].GetSchemaIdx() == SchemaIdx) {
+				return Properties[SchemaIdx];
 			}
-			auto PropItr = std::find_if(Properties.begin(), Properties.end(), [i](const Property& Prop) {
-				return Prop.GetSchemaIdx() == i;
+			auto PropItr = std::find_if(Properties.begin(), Properties.end(), [SchemaIdx](const Property& Prop) {
+				return Prop.GetSchemaIdx() == SchemaIdx;
 			});
 			if (PropItr != Properties.end()) {
 				return *PropItr;
 			}
-			throw PropertyNotFoundException("Property %d does not exist", i);
+			throw PropertyNotFoundException("Property at %d does not exist", SchemaIdx);
+		}
+	};
+
+	class Class : public Struct {
+		const NameEntry* SuperType;
+
+	public:
+		Class(const NameEntry& Name, const NameEntry* SuperType, uint16_t PropCount, std::vector<Property>&& Properties) :
+			Struct(Name, PropCount, std::move(Properties)),
+			SuperType(SuperType)
+		{}
+
+		bool HasSuperType() const {
+			return SuperType != nullptr;
+		}
+
+		// Check if HasSuperType first!
+		const NameEntry& GetSuperType() const {
+			return *SuperType;
 		}
 	};
 
@@ -204,10 +283,18 @@ namespace Zen::Providers {
 			return nullptr;
 		}
 
-		const Schema* GetSchema(const std::string& Name) const {
+		const Struct* GetStruct(const std::string& Name) const {
 			auto NamePtr = GetName(Name);
 			if (NamePtr) {
-				return GetSchema(*NamePtr);
+				return GetStruct(*NamePtr);
+			}
+			return nullptr;
+		}
+
+		const Class* GetClass(const std::string& Name) const {
+			auto NamePtr = GetName(Name);
+			if (NamePtr) {
+				return GetClass(*NamePtr);
 			}
 			return nullptr;
 		}
@@ -224,7 +311,7 @@ namespace Zen::Providers {
 
 		const Enum* GetEnum(const NameEntry& Str) const {
 			auto Itr = std::find_if(Enums.begin(), Enums.end(), [&](const Enum& Enum) {
-				return Enum.Name == Str;
+				return Enum.GetName() == Str;
 			});
 			if (Itr == Enums.end()) {
 				return nullptr;
@@ -232,18 +319,29 @@ namespace Zen::Providers {
 			return &*Itr;
 		}
 
-		const Schema* GetSchema(const NameEntry& Str) const {
-			auto Itr = std::find_if(Schemas.begin(), Schemas.end(), [&](const Schema& Schema) {
-				return Schema.Name == Str;
+		const Struct* GetStruct(const NameEntry& Str) const {
+			auto Itr = std::find_if(Structs.begin(), Structs.end(), [&](const Struct& Struct) {
+				return Struct.GetName() == Str;
 			});
-			if (Itr == Schemas.end()) {
+			if (Itr == Structs.end()) {
+				return nullptr;
+			}
+			return &*Itr;
+		}
+
+		const Class* GetClass(const NameEntry& Str) const {
+			auto Itr = std::find_if(Classes.begin(), Classes.end(), [&](const Class& Class) {
+				return Class.GetName() == Str;
+				});
+			if (Itr == Classes.end()) {
 				return nullptr;
 			}
 			return &*Itr;
 		}
 
 		std::vector<Enum> Enums;
-		std::vector<Schema> Schemas;
+		std::vector<Struct> Structs;
+		std::vector<Class> Classes;
 
 		// We use references to the values inside, don't cause any reallocations after the constructor!
 		std::deque<NameEntry> NameLUT;
@@ -275,10 +373,11 @@ namespace Zen::Providers {
 				CASE(StrProperty);
 				CASE(TextProperty);
 				CASE(InterfaceProperty);
-				//CASE(MulticastDelegateProperty);
-				//CASE(LazyObjectProperty);
-				CASE(SoftObjectProperty);
+				CASE(MulticastDelegateProperty);
+				CASE(WeakObjectProperty);
+				CASE(LazyObjectProperty);
 				CASE(AssetObjectProperty);
+				CASE(SoftObjectProperty);
 				CASE(UInt64Property);
 				CASE(UInt32Property);
 				CASE(UInt16Property);
@@ -288,10 +387,11 @@ namespace Zen::Providers {
 				CASE(MapProperty);
 				CASE(SetProperty);
 				CASE(EnumProperty);
+				CASE(FieldPathProperty);
 
 #undef CASE
 			default:
-				return EPropertyType::Unknown;
+				throw Exceptions::BaseException("Invalid prop name: %.*s", StrSize, Str);
 			}
 		}
 	};
