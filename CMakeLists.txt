@@ -44,6 +44,7 @@ add_dir_recursive(ZenReader src)
 ## Define target ##
 
 add_library(ZenReader STATIC ${ZenReader_SOURCES})
+#add_executable(ZenReader ${ZenReader_SOURCES})
 target_include_directories(ZenReader PUBLIC include ${CMAKE_CURRENT_BINARY_DIR})
 
 install(TARGETS ZenReader DESTINATION lib)

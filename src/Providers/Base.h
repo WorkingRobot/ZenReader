@@ -204,20 +204,31 @@ namespace Zen::Providers {
 		}
 	};
 
-	class Struct {
+	class Schema {
 		std::vector<Property> Properties;
 		const NameEntry& Name;
+		const NameEntry* SuperType;
 		uint16_t PropCount;
 
 	public:
-		Struct(const NameEntry& Name, uint16_t PropCount, std::vector<Property>&& Properties) :
+		Schema(const NameEntry& Name, const NameEntry* SuperType, uint16_t PropCount, std::vector<Property>&& Properties) :
 			Name(Name),
+			SuperType(SuperType),
 			PropCount(PropCount),
 			Properties(std::move(Properties))
 		{}
 
 		const NameEntry& GetName() const {
 			return Name;
+		}
+
+		bool HasSuperType() const {
+			return SuperType != nullptr;
+		}
+
+		// Check if HasSuperType first!
+		const NameEntry& GetSuperType() const {
+			return *SuperType;
 		}
 
 		uint16_t GetPropCount() const {
@@ -246,25 +257,6 @@ namespace Zen::Providers {
 		}
 	};
 
-	class Class : public Struct {
-		const NameEntry* SuperType;
-
-	public:
-		Class(const NameEntry& Name, const NameEntry* SuperType, uint16_t PropCount, std::vector<Property>&& Properties) :
-			Struct(Name, PropCount, std::move(Properties)),
-			SuperType(SuperType)
-		{}
-
-		bool HasSuperType() const {
-			return SuperType != nullptr;
-		}
-
-		// Check if HasSuperType first!
-		const NameEntry& GetSuperType() const {
-			return *SuperType;
-		}
-	};
-
 	class BaseProvider {
 	protected:
 		// Only allow inherited classes
@@ -283,18 +275,10 @@ namespace Zen::Providers {
 			return nullptr;
 		}
 
-		const Struct* GetStruct(const std::string& Name) const {
+		const Schema* GetSchema(const std::string& Name) const {
 			auto NamePtr = GetName(Name);
 			if (NamePtr) {
-				return GetStruct(*NamePtr);
-			}
-			return nullptr;
-		}
-
-		const Class* GetClass(const std::string& Name) const {
-			auto NamePtr = GetName(Name);
-			if (NamePtr) {
-				return GetClass(*NamePtr);
+				return GetSchema(*NamePtr);
 			}
 			return nullptr;
 		}
@@ -319,29 +303,18 @@ namespace Zen::Providers {
 			return &*Itr;
 		}
 
-		const Struct* GetStruct(const NameEntry& Str) const {
-			auto Itr = std::find_if(Structs.begin(), Structs.end(), [&](const Struct& Struct) {
-				return Struct.GetName() == Str;
+		const Schema* GetSchema(const NameEntry& Str) const {
+			auto Itr = std::find_if(Schemas.begin(), Schemas.end(), [&](const Schema& Schema) {
+				return Schema.GetName() == Str;
 			});
-			if (Itr == Structs.end()) {
-				return nullptr;
-			}
-			return &*Itr;
-		}
-
-		const Class* GetClass(const NameEntry& Str) const {
-			auto Itr = std::find_if(Classes.begin(), Classes.end(), [&](const Class& Class) {
-				return Class.GetName() == Str;
-				});
-			if (Itr == Classes.end()) {
+			if (Itr == Schemas.end()) {
 				return nullptr;
 			}
 			return &*Itr;
 		}
 
 		std::vector<Enum> Enums;
-		std::vector<Struct> Structs;
-		std::vector<Class> Classes;
+		std::vector<Schema> Schemas;
 
 		// We use references to the values inside, don't cause any reallocations after the constructor!
 		std::deque<NameEntry> NameLUT;

@@ -12,45 +12,32 @@ namespace Zen::Exports {
 	using namespace Enums;
 	using namespace Structs;
 
-	template<bool StructFallback>
-	class BaseObject : public UExport {
-		const std::conditional_t<StructFallback, Providers::Struct, Providers::Class>& Schema;
+	struct EStructFallback {
+		explicit EStructFallback() = default;
+	};
+
+	inline constexpr EStructFallback StructFallback{};
+
+	class UObject : public UExport {
+		const Providers::Schema& Schema;
 		std::vector<std::pair<std::reference_wrapper<const Providers::Property>, std::unique_ptr<Properties::BaseProperty>>> Properties;
 
 	public:
-		BaseObject(BaseObject&& other) : Schema(other.Schema), Properties(std::move(other.Properties)) {}
+		UObject(UObject&& other) : Schema(other.Schema), Properties(std::move(other.Properties)) {}
 
-		// TODO: handle super type stuff, i literally don't do it at all
-		BaseObject(Streams::BaseStream& InputStream, decltype(Schema) Schema) : Schema(Schema) {
-			FUnversionedHeader Header;
-			InputStream >> Header;
-
-			Structs::FUnversionedHeader::FIterator Itr(Header);
-			if (Itr) {
-				do {
-					if (!Itr.ShouldSerialize()) {
-						continue;
-					}
-					auto& Prop = Schema.GetProp(Itr.GetSchemaItr());
-					Properties.emplace_back(Prop, Properties::Serialize<Properties::EReadType::NORMAL>(InputStream, Prop.GetData()));
-				} while (++Itr);
-			}
-
-			if constexpr (!StructFallback) {
-				int HasGuid;
-				InputStream >> HasGuid;
-				if (HasGuid) {
-					FGuid Guid;
-					InputStream >> Guid;
-				}
-			}
+		UObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema) : Schema(Schema) {
+			Create<false>(InputStream, Schema);
 		}
 
-		decltype(Schema) GetSchema() const {
+		UObject(Streams::BaseStream& InputStream, const Providers::Schema& Schema, EStructFallback) : Schema(Schema) {
+			Create<true>(InputStream, Schema);
+		}
+
+		const Providers::Schema& GetSchema() const {
 			return Schema;
 		}
 
-		const decltype(BaseObject::Properties)& GetProperties() const {
+		const decltype(UObject::Properties)& GetProperties() const {
 			return Properties;
 		}
 
@@ -109,8 +96,32 @@ namespace Zen::Exports {
 			}
 			return nullptr;
 		}
-	};
+	
+	private:
+		template<bool StructFallback>
+		void Create(Streams::BaseStream& InputStream, const Providers::Schema& Schema) {
+			FUnversionedHeader Header;
+			InputStream >> Header;
 
-	using UObject = BaseObject<false>;
-	using UStructFallback = BaseObject<true>;
+			Structs::FUnversionedHeader::FIterator Itr(Header);
+			if (Itr) {
+				do {
+					if (!Itr.ShouldSerialize()) {
+						continue;
+					}
+					auto& Prop = Schema.GetProp(Itr.GetSchemaItr());
+					Properties.emplace_back(Prop, Properties::Serialize<Properties::EReadType::NORMAL>(InputStream, Prop.GetData()));
+				} while (++Itr);
+			}
+
+			if constexpr (!StructFallback) {
+				int HasGuid;
+				InputStream >> HasGuid;
+				if (HasGuid) {
+					FGuid Guid;
+					InputStream >> Guid;
+				}
+			}
+		}
+	};
 }

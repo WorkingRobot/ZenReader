@@ -53,18 +53,6 @@ namespace Zen::Providers {
 			}
 		}
 
-		void SerializeStruct(Streams::BaseStream& Stream, const Struct& Struct, const std::deque<NameEntry>& NameLUT) {
-			Stream << GetNameIdx(Struct.GetName(), NameLUT);
-			Stream << Struct.GetPropCount();
-
-			Stream << (SchemaPropIdx)Struct.GetSerializablePropCount();
-			for (auto& Prop : Struct.GetProps()) {
-				Stream << Prop.GetSchemaIdx();
-				Stream << GetNameIdx(Prop.GetName(), NameLUT);
-				SerializePropData(Stream, Prop.GetData(), NameLUT);
-			}
-		}
-
 		void WriteUsmapData(const char* OutputFile, ECompressionMethod Compression, uint32_t CompSize, uint32_t DecompSize, const char* CompData) {
 			Streams::MemoryStream OutputFileStream;
 			OutputFileStream << FileMagic;
@@ -103,16 +91,18 @@ namespace Zen::Providers {
 			}
 		}
 
-		OutputStream << (SchemaIdx)Provider.Structs.size();
-		for (auto& Struct : Provider.Structs) {
-			SerializeStruct(OutputStream, Struct, Provider.NameLUT);
-		}
+		OutputStream << (SchemaIdx)Provider.Schemas.size();
+		for (auto& Schema : Provider.Schemas) {
+			OutputStream << GetNameIdx(Schema.GetName(), Provider.NameLUT);
+			OutputStream << (Schema.HasSuperType() ? GetNameIdx(Schema.GetSuperType(), Provider.NameLUT) : InvalidName);
+			OutputStream << Schema.GetPropCount();
 
-		OutputStream << (SchemaIdx)Provider.Classes.size();
-		for (auto& Class : Provider.Classes) {
-			SerializeStruct(OutputStream, Class, Provider.NameLUT);
-
-			OutputStream << (Class.HasSuperType() ? GetNameIdx(Class.GetSuperType(), Provider.NameLUT) : InvalidName);
+			OutputStream << (SchemaPropIdx)Schema.GetSerializablePropCount();
+			for (auto& Prop : Schema.GetProps()) {
+				OutputStream << Prop.GetSchemaIdx();
+				OutputStream << GetNameIdx(Prop.GetName(), Provider.NameLUT);
+				SerializePropData(OutputStream, Prop.GetData(), Provider.NameLUT);
+			}
 		}
 
 		uint32_t CompSize;

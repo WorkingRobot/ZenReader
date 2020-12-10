@@ -127,36 +127,6 @@ namespace Zen::Providers::Smart {
 			}
 		}
 
-		template<bool HasSuperType, class Type>
-		Type DeserializeStruct(Streams::BaseStream& Stream) {
-			NameIdx Idx;
-			Stream >> Idx;
-			uint16_t PropCount;
-			Stream >> PropCount;
-
-			SchemaPropIdx SerializablePropCount;
-			Stream >> SerializablePropCount;
-			std::vector<Property> Props;
-			Props.reserve(SerializablePropCount);
-			for (SchemaPropIdx i = 0; i < SerializablePropCount; ++i) {
-				uint16_t SchemaIdx;
-				NameIdx Idx;
-				Stream >> SchemaIdx;
-				Stream >> Idx;
-				auto& Prop = Props.emplace_back(NameLUT[Idx], SchemaIdx);
-				DeserializePropData(Stream, Prop.GetEditableData());
-			}
-
-			if constexpr (HasSuperType) {
-				NameIdx SuperIdx;
-				Stream >> SuperIdx;
-				return Type(NameLUT[Idx], SuperIdx != InvalidName ? &NameLUT[SuperIdx] : nullptr, PropCount, std::move(Props));
-			}
-			else {
-				return Type(NameLUT[Idx], PropCount, std::move(Props));
-			}
-		}
-
 		void ParseData(Streams::BaseStream& InputStream) {
 			{
 				NameIdx Size;
@@ -196,18 +166,29 @@ namespace Zen::Providers::Smart {
 			{
 				SchemaIdx Size;
 				InputStream >> Size;
-				Structs.reserve(Size);
+				Schemas.reserve(Size);
 				for (SchemaIdx i = 0; i < Size; ++i) {
-					Structs.emplace_back(std::move(DeserializeStruct<false, Struct>(InputStream)));
-				}
-			}
+					NameIdx Idx;
+					InputStream >> Idx;
+					NameIdx SuperIdx;
+					InputStream >> SuperIdx;
+					uint16_t PropCount;
+					InputStream >> PropCount;
 
-			{
-				SchemaIdx Size;
-				InputStream >> Size;
-				Classes.reserve(Size);
-				for (SchemaIdx i = 0; i < Size; ++i) {
-					Classes.emplace_back(std::move(DeserializeStruct<true, Class>(InputStream)));
+					SchemaPropIdx SerializablePropCount;
+					InputStream >> SerializablePropCount;
+					std::vector<Property> Props;
+					Props.reserve(SerializablePropCount);
+					for (SchemaPropIdx i = 0; i < SerializablePropCount; ++i) {
+						uint16_t SchemaIdx;
+						NameIdx Idx;
+						InputStream >> SchemaIdx;
+						InputStream >> Idx;
+						auto& Prop = Props.emplace_back(NameLUT[Idx], SchemaIdx);
+						DeserializePropData(InputStream, Prop.GetEditableData());
+					}
+
+					Schemas.emplace_back(NameLUT[Idx], SuperIdx != InvalidName ? &NameLUT[SuperIdx] : nullptr, PropCount, std::move(Props));
 				}
 			}
 		}

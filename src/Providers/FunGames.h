@@ -26,7 +26,6 @@ namespace Zen::Providers::FunGames {
 	private:
 		void ParseNamespaceMappings(const std::filesystem::path& Path, char* ReadBuffer, size_t BufferSize) {
 			auto NamespacePrefix = (Path / Path.filename()).string();
-			printf("parsing %s\n", Path.filename().string().c_str());
 			{
 				rapidjson::Document EnumDocument;
 				auto fp = fopen((NamespacePrefix + "_EnumMappings.json").c_str(), "rb");
@@ -38,14 +37,14 @@ namespace Zen::Providers::FunGames {
 				rapidjson::Document StructDocument;
 				auto fp = fopen((NamespacePrefix + "_StructMappings.json").c_str(), "rb");
 				rapidjson::FileReadStream is(fp, ReadBuffer, BufferSize);
-				ParseStructMappings(StructDocument.ParseStream(is));
+				ParseSchemaMappings(StructDocument.ParseStream(is));
 				fclose(fp);
 			}
 			{
 				rapidjson::Document ClassDocument;
 				auto fp = fopen((NamespacePrefix + "_ClassMappings.json").c_str(), "rb");
 				rapidjson::FileReadStream is(fp, ReadBuffer, BufferSize);
-				ParseClassMappings(ClassDocument.ParseStream(is));
+				ParseSchemaMappings(ClassDocument.ParseStream(is));
 				fclose(fp);
 			}
 		}
@@ -96,8 +95,7 @@ namespace Zen::Providers::FunGames {
 			}
 		}
 
-		template<bool HasSuperType, class Type>
-		void ParseMappings(const rapidjson::Document& Mappings, std::vector<Type>& Schemas) {
+		void ParseSchemaMappings(const rapidjson::Document& Mappings) {
 			for (auto& SchemaType : Mappings.GetArray()) {
 				auto PropsJson = SchemaType["properties"].GetArray();
 				std::vector<Property> Props;
@@ -108,22 +106,9 @@ namespace Zen::Providers::FunGames {
 
 					PopulatePropertyData(PropJson["mappingType"], Prop.GetEditableData());
 				}
-				if constexpr (HasSuperType) {
 
-					Schemas.emplace_back(GetOrCreateName(SchemaType["name"]), SchemaType.HasMember("superType") ? &GetOrCreateName(SchemaType["superType"]) : nullptr, SchemaType["propertyCount"].GetUint(), std::move(Props));
-				}
-				else {
-					Schemas.emplace_back(GetOrCreateName(SchemaType["name"]), SchemaType["propertyCount"].GetUint(), std::move(Props));
-				}
+				Schemas.emplace_back(GetOrCreateName(SchemaType["name"]), SchemaType.HasMember("superType") ? &GetOrCreateName(SchemaType["superType"]) : nullptr, SchemaType["propertyCount"].GetUint(), std::move(Props));
 			}
-		}
-
-		void ParseStructMappings(const rapidjson::Document& Mappings) {
-			ParseMappings<false>(Mappings, Structs);
-		}
-
-		void ParseClassMappings(const rapidjson::Document& Mappings) {
-			ParseMappings<true>(Mappings, Classes);
 		}
 
 		static constexpr EPropertyType GetPropertyType(const rapidjson::Value& Str) {

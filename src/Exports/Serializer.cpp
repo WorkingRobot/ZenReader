@@ -16,7 +16,7 @@ namespace Zen::Exports {
 		if (!Provider) {
 			throw StreamPropertyNotFoundException("Exports must be deserialized from ZExport");
 		}
-		auto Schema = Provider->GetClass(ExportType);
+		auto Schema = Provider->GetSchema(ExportType);
 		if (!Schema) {
 			throw SchemaNotFoundException("The schema for the export \"%s\" was not found", ExportType.c_str());
 		}
