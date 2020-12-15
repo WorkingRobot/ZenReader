@@ -102,7 +102,7 @@ namespace Zen::Providers::FunGames {
 				Props.reserve(PropsJson.Size());
 				for (auto& PropJson : PropsJson) {
 
-					auto& Prop = Props.emplace_back(GetOrCreateName(PropJson["name"]), PropJson["index"].GetUint());
+					auto& Prop = Props.emplace_back(GetOrCreateName(PropJson["name"]), PropJson["index"].GetUint(), PropJson.HasMember("arraySize") ? PropJson["arraySize"].GetUint() : 1);
 
 					PopulatePropertyData(PropJson["mappingType"], Prop.GetEditableData());
 				}

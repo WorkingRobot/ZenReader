@@ -34,6 +34,13 @@ namespace Zen::Providers::Smart {
 		static constexpr NameIdx InvalidName = std::numeric_limits<NameIdx>::max();
 	}
 
+	enum class Version {
+		INITIAL,
+
+		LATEST_PLUS_ONE,
+		LATEST = LATEST_PLUS_ONE - 1
+	};
+
 	class Provider : public BaseProvider {
 	public:
 		Provider(const std::filesystem::path& UsmapPath) {
@@ -52,6 +59,12 @@ namespace Zen::Providers::Smart {
 			CompressedInputStream >> Magic;
 			if (Magic != FileMagic) {
 				throw InvalidMagicException(".usmap file has an invalid magic constant");
+			}
+
+			uint8_t Version;
+			CompressedInputStream >> Version;
+			if (Version != (uint8_t)Version::LATEST) {
+				throw InvalidVersionException(".usmap file has invalid version %d", (int)Version);
 			}
 
 			uint8_t Method;
@@ -181,10 +194,12 @@ namespace Zen::Providers::Smart {
 					Props.reserve(SerializablePropCount);
 					for (SchemaPropIdx i = 0; i < SerializablePropCount; ++i) {
 						uint16_t SchemaIdx;
+						uint8_t ArraySize;
 						NameIdx Idx;
 						InputStream >> SchemaIdx;
+						InputStream >> ArraySize;
 						InputStream >> Idx;
-						auto& Prop = Props.emplace_back(NameLUT[Idx], SchemaIdx);
+						auto& Prop = Props.emplace_back(NameLUT[Idx], SchemaIdx, ArraySize);
 						DeserializePropData(InputStream, Prop.GetEditableData());
 					}
 

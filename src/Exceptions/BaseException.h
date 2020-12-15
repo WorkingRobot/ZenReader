@@ -31,6 +31,7 @@ namespace Zen::Exceptions {
 	}
 
 	DEFINE_EXCEPTION(InvalidMagicException);
+	DEFINE_EXCEPTION(InvalidVersionException);
 	DEFINE_EXCEPTION(InvalidChunkIdException);
 	DEFINE_EXCEPTION(NameNotFoundException);
 	DEFINE_EXCEPTION(StreamPropertyNotFoundException);

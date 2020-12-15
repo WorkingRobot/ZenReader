@@ -179,12 +179,14 @@ namespace Zen::Providers {
 	class Property {
 		const NameEntry& Name;
 		uint16_t SchemaIdx;
+		uint8_t ArraySize;
 		PropertyData Data;
 
 	public:
-		Property(const NameEntry& Name, uint16_t SchemaIdx) :
+		Property(const NameEntry& Name, uint16_t SchemaIdx, uint8_t ArraySize) :
 			Name(Name),
-			SchemaIdx(SchemaIdx)
+			SchemaIdx(SchemaIdx),
+			ArraySize(ArraySize)
 		{}
 
 		const NameEntry& GetName() const {
@@ -193,6 +195,10 @@ namespace Zen::Providers {
 
 		uint16_t GetSchemaIdx() const {
 			return SchemaIdx;
+		}
+
+		uint8_t GetArraySize() const {
+			return ArraySize;
 		}
 
 		const PropertyData& GetData() const {

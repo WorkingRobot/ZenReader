@@ -56,6 +56,7 @@ namespace Zen::Providers {
 		void WriteUsmapData(const char* OutputFile, ECompressionMethod Compression, uint32_t CompSize, uint32_t DecompSize, const char* CompData) {
 			Streams::MemoryStream OutputFileStream;
 			OutputFileStream << FileMagic;
+			OutputFileStream << (uint8_t)Version::LATEST;
 			OutputFileStream << (uint8_t)Compression;
 			OutputFileStream << CompSize;
 			OutputFileStream << DecompSize;
@@ -100,6 +101,7 @@ namespace Zen::Providers {
 			OutputStream << (SchemaPropIdx)Schema.GetSerializablePropCount();
 			for (auto& Prop : Schema.GetProps()) {
 				OutputStream << Prop.GetSchemaIdx();
+				OutputStream << Prop.GetArraySize();
 				OutputStream << GetNameIdx(Prop.GetName(), Provider.NameLUT);
 				SerializePropData(OutputStream, Prop.GetData(), Provider.NameLUT);
 			}
