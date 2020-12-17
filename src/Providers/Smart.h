@@ -144,6 +144,9 @@ namespace Zen::Providers::Smart {
 			{
 				NameIdx Size;
 				InputStream >> Size;
+#ifndef USE_JSON
+				NameLUT.reserve(Size);
+#endif
 				for (NameIdx i = 0; i < Size; ++i) {
 					NameSize NameSize;
 					InputStream >> NameSize;

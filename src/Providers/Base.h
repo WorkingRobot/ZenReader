@@ -323,7 +323,12 @@ namespace Zen::Providers {
 		std::vector<Schema> Schemas;
 
 		// We use references to the values inside, don't cause any reallocations after the constructor!
-		std::deque<NameEntry> NameLUT;
+#ifdef USE_JSON
+		using NameContainer = std::deque<NameEntry>;
+#else
+		using NameContainer = std::vector<NameEntry>;
+#endif
+		NameContainer NameLUT;
 
 	protected:
 		const NameEntry& GetOrCreateName(const char* Str, size_t StrSize) {

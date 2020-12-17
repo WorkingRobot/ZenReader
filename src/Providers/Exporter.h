@@ -17,7 +17,7 @@ namespace Zen::Providers {
 	using namespace Smart;
 
 	namespace {
-		NameIdx GetNameIdx(const NameEntry& Val, const std::deque<NameEntry>& NameLUT) {
+		NameIdx GetNameIdx(const NameEntry& Val, const BaseProvider::NameContainer& NameLUT) {
 			NameIdx i = 0;
 			for (auto& Name : NameLUT) {
 				if (Val == Name) {
@@ -28,7 +28,7 @@ namespace Zen::Providers {
 			throw NameNotFoundException("The name \"%s\" could not be found", Val.c_str());
 		}
 
-		void SerializePropData(Streams::BaseStream& Stream, const PropertyData& PropData, const std::deque<NameEntry>& NameLUT) {
+		void SerializePropData(Streams::BaseStream& Stream, const PropertyData& PropData, const BaseProvider::NameContainer& NameLUT) {
 			Stream << (uint8_t)PropData.GetType();
 			auto& Data = PropData.GetData();
 			switch (PropData.GetType())

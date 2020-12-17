@@ -79,6 +79,11 @@
           "name": "USE_BROTLI_STATIC",
           "value": "True",
           "type": "BOOL"
+        },
+        {
+          "name": "USE_JSON",
+          "value": "False",
+          "type": "BOOL"
         }
       ]
     }
